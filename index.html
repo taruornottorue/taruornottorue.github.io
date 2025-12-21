@@ -61,9 +61,10 @@
 <body>
 <div id="password-modal" class="modal" aria-hidden="false">
   <div class="card" style="max-width:520px;">
-    <h1>Enter password</h1>
+    <h1>Enter shared password</h1>
+    <div class="muted" style="margin-bottom:12px">This is simple client-side gating for local use. Change the password in the script (PASSWORD variable).</div>
     <div class="field">
-      <input id="pw-input" placeholder="Password" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"/>
+      <input id="pw-input" placeholder="Shared password" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"/>
     </div>
     <div style="display:flex; gap:8px; justify-content:flex-end;">
       <button id="pw-submit" class="btn">Unlock</button>
@@ -155,7 +156,7 @@
   - Works offline in a local browser. For lightweight security, this uses a client-side password.
 */
 
-const PASSWORD = "Stacy"; // <-- change this to your shared password
+const PASSWORD = "letmein"; // <-- change this to your shared password
 const STORAGE_READINGS = 'homely_readings';
 const STORAGE_ANNOT = 'homely_annotations';
 
