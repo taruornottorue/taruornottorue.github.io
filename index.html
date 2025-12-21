@@ -3,29 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Homely Annotator (local)</title>
+<title>Homely Annotator (local) — Fixed Password</title>
 <style>
-  /* HOMELY THEME - warm tones, rounded corners, comfy spacing */
   :root{
-    --bg:#fff8f2;
-    --panel:#fff;
-    --muted:#6b5b4a;
-    --accent:#f6c07d;
-    --accent-2:#ffb86b;
-    --card-shadow: 0 6px 18px rgba(98,76,54,0.08);
-    --glass: rgba(255,255,255,0.6);
+    --bg:#fff8f2; --panel:#fff; --muted:#6b5b4a; --accent:#f6c07d; --accent-2:#ffb86b; --card-shadow: 0 6px 18px rgba(98,76,54,0.08); --glass: rgba(255,255,255,0.6);
   }
-  [data-theme="dark"]{
-    --bg:#0f1213;
-    --panel:#111314;
-    --muted:#bfbfbf;
-    --accent:#b36b1b;
-    --accent-2:#d88b3a;
-    --card-shadow: 0 6px 18px rgba(0,0,0,0.6);
-    --glass: rgba(255,255,255,0.03);
-  }
+  [data-theme="dark"]{ --bg:#0f1213; --panel:#111314; --muted:#bfbfbf; --accent:#b36b1b; --accent-2:#d88b3a; --card-shadow: 0 6px 18px rgba(0,0,0,0.6); --glass: rgba(255,255,255,0.03); }
   *{box-sizing:border-box}
-  html,body{height:100%; margin:0; font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,var(--bg),#fff); color:var(--muted);}
+  html,body{height:100%; margin:0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:linear-gradient(180deg,var(--bg),#fff); color:var(--muted);}
   .app{display:flex; height:100vh; gap:12px; padding:18px;}
   .left, .center, .right { background:var(--panel); border-radius:14px; box-shadow:var(--card-shadow); padding:14px; }
   .left{width:260px; flex-shrink:0; display:flex; flex-direction:column; gap:12px;}
@@ -43,7 +28,7 @@
   .highlight { background: #fff49a; border-radius:4px; padding:0 1px; cursor:pointer; }
   .floating-toolbar{position:absolute; z-index:9999; background:var(--panel); border-radius:8px; box-shadow:var(--card-shadow); padding:6px; display:flex; gap:6px; align-items:center; }
   .modal {position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,10,10,0.4); z-index:10000;}
-  .card {background:var(--panel); padding:18px; border-radius:12px; width:420px; box-shadow:var(--card-shadow);}
+  .card {background:var(--panel); padding:18px; border-radius:12px; width:520px; box-shadow:var(--card-shadow);}
   .field{margin-bottom:8px}
   .muted{color:var(--muted); font-size:0.9rem}
   .annotation-item{padding:8px; border-radius:8px; margin-bottom:8px; background:linear-gradient(180deg, rgba(246,192,125,0.06), rgba(0,0,0,0.01))}
@@ -51,33 +36,43 @@
   .topbar{display:flex; justify-content:space-between; align-items:center; gap:12px;}
   .footer-note{font-size:0.82rem; color:var(--muted); margin-top:8px}
   .chip{background:rgba(0,0,0,0.03); padding:6px 8px; border-radius:999px; font-size:0.85rem}
-  /* selection highlight animation */
   @keyframes pop { from { transform:scale(.98); opacity:0 } to { transform:none; opacity:1 } }
   .floating-toolbar{animation:pop .12s ease-out;}
-  /* responsive */
+  .shake { animation: shake .28s; }
+  @keyframes shake { 0%{transform:translateX(0)} 25%{transform:translateX(-6px)} 50%{transform:translateX(6px)} 75%{transform:translateX(-4px)} 100%{transform:translateX(0)} }
   @media (max-width:900px){ .left{display:none} .right{display:none} .app{padding:12px} }
+  /* password box styles */
+  .pw-input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ddd; font-size:1rem; }
+  .pw-row{display:flex; gap:8px; align-items:center}
+  .pw-error{color:#b33; font-size:0.9rem; margin-top:8px}
+  .pw-foot{font-size:0.9rem; color:var(--muted); margin-top:6px}
 </style>
 </head>
 <body>
-<div id="password-modal" class="modal" aria-hidden="false">
-  <div class="card" style="max-width:520px;">
+<!-- PASSWORD MODAL -->
+<div id="password-modal" class="modal" aria-hidden="false" role="dialog" aria-modal="true">
+  <div class="card" style="max-width:540px;">
     <h1>Enter shared password</h1>
-    <div class="muted" style="margin-bottom:12px">This is simple client-side gating for local use. Change the password in the script (PASSWORD variable).</div>
+    <div class="muted" style="margin-bottom:12px">This is a simple client-side gate for local use. Change the password in the script <code>PASSWORD</code> constant.</div>
     <div class="field">
-      <input id="pw-input" placeholder="Shared password" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"/>
-    </div>
-    <div style="display:flex; gap:8px; justify-content:flex-end;">
-      <button id="pw-submit" class="btn">Unlock</button>
+      <div class="pw-row">
+        <input id="pw-input" class="pw-input" type="password" placeholder="Shared password" autocomplete="off" aria-label="Shared password">
+        <button id="pw-toggle" class="btn-ghost" title="Show password">👁️</button>
+        <button id="pw-submit" class="btn">Unlock</button>
+      </div>
+      <div id="pw-error" class="pw-error" role="status" aria-live="polite" style="display:none;"></div>
+      <div class="pw-foot">Tip: password is case-sensitive; leading/trailing spaces are ignored.</div>
     </div>
   </div>
 </div>
 
-<div class="app" id="app" style="display:none" data-theme="light">
+<!-- APP -->
+<div id="app" class="app" style="display:none" data-theme="light">
   <div class="left">
     <div class="topbar">
       <div>
         <h1>Readings</h1>
-        <div class="muted">Upload / choose a reading</div>
+        <div class="muted">Upload / create / manage</div>
       </div>
       <div style="text-align:right">
         <button id="theme-toggle" class="chip small">🌙</button>
@@ -108,13 +103,13 @@
         <div class="muted" id="meta-area"></div>
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
-        <div class="muted small">Annotator name</div>
+        <div class="muted small">Annotator</div>
         <input id="author-input" placeholder="Your name (saved locally)" style="padding:6px 8px; border-radius:8px; border:1px solid #ddd"/>
       </div>
     </div>
 
     <div id="reading" tabindex="0" role="article" aria-label="Reading text"></div>
-    <div class="muted" style="margin-top:10px">Select any text to annotate. A small toolbar will appear. Highlights are stored locally.</div>
+    <div class="muted" style="margin-top:10px">Select text to annotate. Use Export to back up annotations.</div>
   </div>
 
   <div class="right">
@@ -126,14 +121,13 @@
   </div>
 </div>
 
-<!-- floating toolbar -->
+<!-- toolbar + annotation modal (same as before) -->
 <div id="toolbar" class="floating-toolbar" style="display:none;">
   <button id="annotate-btn" class="btn-ghost">✍️ Annotate</button>
   <button id="highlight-btn" class="btn-ghost">🔆 Highlight</button>
   <button id="clear-selection" class="btn-ghost">✖</button>
 </div>
 
-<!-- annotation modal -->
 <div id="annot-modal" class="modal" style="display:none;">
   <div class="card" role="dialog" aria-modal="true">
     <h2 style="margin-top:0">Add annotation</h2>
@@ -149,40 +143,32 @@
 </div>
 
 <script>
-/*
-  SIMPLE LOCAL ANNOTATOR
-  - Configure PASSWORD below
-  - Data saved in localStorage keys: 'homely_readings' (object) and 'homely_annotations' (object)
-  - Works offline in a local browser. For lightweight security, this uses a client-side password.
-*/
+/* CONFIG */
+const PASSWORD = "letmein"; // <-- set shared password here (exact match after trimming)
 
-const PASSWORD = "letmein"; // <-- change this to your shared password
-const STORAGE_READINGS = 'homely_readings';
-const STORAGE_ANNOT = 'homely_annotations';
+/* Storage keys */
+const STORAGE_READINGS = 'homely_readings_v2';
+const STORAGE_ANNOT = 'homely_annotations_v2';
 
-const state = {
-  currentReadingId: null,
-  readings: {},        // id -> {id,title,body,created_at, filename}
-  annotations: {},     // readingId -> [{id, start, end, note, author, created_at}]
-  pendingSelection: null,
-  theme: 'light'
-};
+/* STATE */
+const state = { currentReadingId: null, readings: {}, annotations: {}, pendingSelection: null, theme: 'light' };
 
-// UTIL: load/save
+/* UTIL: load/save */
 function saveAll(){ localStorage.setItem(STORAGE_READINGS, JSON.stringify(state.readings)); localStorage.setItem(STORAGE_ANNOT, JSON.stringify(state.annotations)); }
 function loadAll(){
-  try{ state.readings = JSON.parse(localStorage.getItem(STORAGE_READINGS) || '{}'); }
-  catch(e){ state.readings = {} }
-  try{ state.annotations = JSON.parse(localStorage.getItem(STORAGE_ANNOT) || '{}'); }
-  catch(e){ state.annotations = {} }
+  try{ state.readings = JSON.parse(localStorage.getItem(STORAGE_READINGS) || '{}'); } catch(e){ state.readings = {}; }
+  try{ state.annotations = JSON.parse(localStorage.getItem(STORAGE_ANNOT) || '{}'); } catch(e){ state.annotations = {}; }
 }
 loadAll();
 
-// DOM refs
-const app = document.getElementById('app');
+/* DOM refs */
 const pwModal = document.getElementById('password-modal');
 const pwInput = document.getElementById('pw-input');
 const pwSubmit = document.getElementById('pw-submit');
+const pwError = document.getElementById('pw-error');
+const pwToggle = document.getElementById('pw-toggle');
+const app = document.getElementById('app');
+
 const fileInput = document.getElementById('file-input');
 const importFile = document.getElementById('import-file');
 const readingList = document.getElementById('reading-list');
@@ -194,47 +180,86 @@ const toolbar = document.getElementById('toolbar');
 const annotModal = document.getElementById('annot-modal');
 const selPreview = document.getElementById('sel-preview');
 const noteInput = document.getElementById('note-input');
-const authorInput = document.getElementById('author-input');
-const themeToggle = document.getElementById('theme-toggle');
 
-// Password gating (simple)
+/* Password UX behavior */
+/* Keep simple: trim input, compare to PASSWORD. Provide clear message on failure. */
 pwSubmit.addEventListener('click', tryPw);
-pwInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryPw(); });
+pwInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tryPw(); });
+pwToggle.addEventListener('click', ()=> {
+  const t = pwInput.getAttribute('type') === 'password' ? 'text' : 'password';
+  pwInput.setAttribute('type', t);
+  pwToggle.textContent = t === 'password' ? '👁️' : '🙈';
+});
+
+/* Check sessionStorage for unlocked state */
+if(sessionStorage.getItem('homely_unlocked') === '1') {
+  pwModal.style.display = 'none';
+  app.style.display = 'flex';
+  initUI();
+} else {
+  // Focus input automatically
+  pwInput.focus();
+}
+
 function tryPw(){
-  const v = pwInput.value || '';
-  if(v === PASSWORD){
+  const val = (pwInput.value || '').trim();
+  // Clear any previous error
+  pwError.style.display = 'none';
+  pwModal.classList.remove('shake');
+  if(!val){
+    showPwError('Please enter the password.');
+    return;
+  }
+  if(val === PASSWORD){
     sessionStorage.setItem('homely_unlocked', '1');
     pwModal.style.display = 'none';
     app.style.display = 'flex';
-    initUI();
-  } else {
+    // clear pw input for hygiene
     pwInput.value = '';
-    pwInput.placeholder = 'Wrong password, try again';
-    pwInput.focus();
+    initUI();
+    return;
   }
+  // wrong password
+  showPwError('Wrong password — try again');
+  // small shake for visual feedback
+  pwModal.classList.remove('shake');
+  // reflow then add class to retrigger animation
+  void pwModal.offsetWidth;
+  pwModal.classList.add('shake');
+  // keep focus & select to make retry quick
+  pwInput.focus();
+  pwInput.select();
 }
-if(sessionStorage.getItem('homely_unlocked') === '1'){ pwModal.style.display = 'none'; app.style.display = 'flex'; initUI(); }
 
-// INIT UI after unlock
+function showPwError(msg){
+  pwError.textContent = msg;
+  pwError.style.display = 'block';
+}
+
+/* MAIN APP UI init (runs only after unlock) */
 function initUI(){
   // theme
   const savedTheme = localStorage.getItem('homely_theme') || 'light';
   setTheme(savedTheme);
-  themeToggle.addEventListener('click', ()=> setTheme(state.theme === 'light' ? 'dark' : 'light'));
-  // file upload
+  document.getElementById('theme-toggle').addEventListener('click', ()=> setTheme(state.theme === 'light' ? 'dark' : 'light'));
+
+  // file upload / new / import / export
   fileInput.addEventListener('change', handleUpload);
   document.getElementById('new-btn').addEventListener('click', createNewReading);
   document.getElementById('export-btn').addEventListener('click', exportAll);
   document.getElementById('import-btn').addEventListener('click', ()=> importFile.click());
   importFile.addEventListener('change', handleImport);
-  document.getElementById('author-input').value = localStorage.getItem('homely_author') || '';
-  document.getElementById('author-input').addEventListener('change', ()=> localStorage.setItem('homely_author', document.getElementById('author-input').value));
-  // toolbar buttons
+  const authorInput = document.getElementById('author-input');
+  authorInput.value = localStorage.getItem('homely_author') || '';
+  authorInput.addEventListener('change', ()=> localStorage.setItem('homely_author', authorInput.value));
+
+  // toolbar & annot modal buttons
   document.getElementById('annotate-btn').addEventListener('click', openAnnotModal);
   document.getElementById('highlight-btn').addEventListener('click', quickHighlight);
   document.getElementById('clear-selection').addEventListener('click', clearSelectionUI);
   document.getElementById('cancel-annot').addEventListener('click', ()=> { annotModal.style.display='none'; clearSelectionUI(); });
   document.getElementById('save-annot').addEventListener('click', saveAnnotationFromModal);
+
   // click highlight to show note
   readingEl.addEventListener('click', (e)=>{
     const span = e.target.closest('.highlight');
@@ -246,24 +271,32 @@ function initUI(){
       alert(`"${ ann.note }"\n— ${ann.author||'Anonymous'} (${new Date(ann.created_at).toLocaleString()})`);
     }
   });
-  // selection handling
+
+  // selection handler
   document.addEventListener('selectionchange', selectionChanged);
-  // initial render reading list
+
   renderReadingList();
-  // if there are readings, select the most recent
+
+  // auto-open most recent
   const ids = Object.keys(state.readings).sort((a,b)=> new Date(state.readings[b].created_at)-new Date(state.readings[a].created_at));
   if(ids.length) openReading(ids[0]);
+  else {
+    // add friendly sample if first run
+    if(!localStorage.getItem('homely_sample_added')){
+      const id = 'r_demo';
+      state.readings[id] = { id, title: 'Demo reading', body: 'Welcome — select some text to annotate.\n\nThis simple local annotator saves notes to your browser (localStorage). You can upload .txt/.md files using Upload. Use Export to back up.', created_at: (new Date()).toISOString(), filename: 'demo' };
+      localStorage.setItem('homely_sample_added','1');
+      saveAll();
+      renderReadingList();
+      openReading(id);
+    }
+  }
 }
 
-// THEME
-function setTheme(t){
-  state.theme = t;
-  document.getElementById('app').setAttribute('data-theme', t);
-  localStorage.setItem('homely_theme', t);
-  themeToggle.textContent = t==='light' ? '🌙' : '☀️';
-}
+/* THEME */
+function setTheme(t){ state.theme = t; document.getElementById('app').setAttribute('data-theme', t); localStorage.setItem('homely_theme', t); document.getElementById('theme-toggle').textContent = t==='light' ? '🌙' : '☀️'; }
 
-// UPLOAD / CREATE / IMPORT / EXPORT
+/* UPLOAD / NEW / IMPORT / EXPORT */
 function handleUpload(e){
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
@@ -311,19 +344,17 @@ function handleImport(e){
   r.readAsText(f);
 }
 
-// RENDER reading list
+/* RENDER reading list */
 function renderReadingList(){
   const keys = Object.keys(state.readings).sort((a,b)=> new Date(state.readings[b].created_at)-new Date(state.readings[a].created_at));
   readingList.innerHTML = keys.length ? keys.map(id=>{
     const r = state.readings[id];
     return `<div class="list-item" data-id="${id}"><div style="flex:1"><strong>${escapeHtml(r.title)}</strong><div class="muted small">${r.filename ? r.filename : ''} • ${new Date(r.created_at).toLocaleDateString()}</div></div><div><button class="btn-ghost" data-action="edit" data-id="${id}">Edit</button></div></div>`;
   }).join('') : `<div class="muted small">No readings yet</div>`;
-  // attach handlers
   Array.from(readingList.querySelectorAll('.list-item')).forEach(el=>{
     el.addEventListener('click', (e)=>{
       const id = el.dataset.id;
       if(!id) return;
-      // if clicked an inner button, the event bubble might be different; handle edit separately
       if(e.target && e.target.dataset && e.target.dataset.action==='edit'){ editReading(id); e.stopPropagation(); return; }
       openReading(id);
     });
@@ -333,13 +364,13 @@ function renderReadingList(){
   });
 }
 
-// OPEN / RENDER a reading with annotations
+/* OPEN / RENDER a reading with annotations */
 function openReading(id){
   if(!state.readings[id]) return;
   state.currentReadingId = id;
   titleArea.textContent = state.readings[id].title;
   metaArea.textContent = `${state.readings[id].filename || 'local text'} · ${new Date(state.readings[id].created_at).toLocaleString()}`;
-  readingEl.innerHTML = ''; // we'll create a raw text holder for stable offsets
+  readingEl.innerHTML = '';
   const holder = document.createElement('div');
   holder.id = '__raw_text_holder';
   holder.style.whiteSpace = 'pre-wrap';
@@ -350,18 +381,17 @@ function openReading(id){
   renderAnnotationList();
 }
 
-// EDIT reading body (simple replace)
+/* Edit reading (replace body) */
 function editReading(id){
   const r = state.readings[id];
-  const newBody = prompt('Edit reading body (full text). Saving will replace the text and may shift annotation offsets. If you want to keep annotations stable, avoid major edits.', r.body);
+  const newBody = prompt('Edit reading body (full text). Saving will replace the text and may shift annotation offsets.', r.body);
   if(newBody === null) return;
   r.body = newBody;
-  r.created_at = r.created_at; // keep original created_at
   saveAll();
   openReading(id);
 }
 
-// convert annotations to HTML in the raw holder (non-overlapping assumption)
+/* render annotations into raw text holder (non-overlapping assumption) */
 function renderAnnotationsInto(holder, readingId){
   const raw = holder.textContent || '';
   const anns = (state.annotations[readingId] || []).slice().sort((a,b)=> a.start - b.start);
@@ -376,7 +406,7 @@ function renderAnnotationsInto(holder, readingId){
   holder.innerHTML = out;
 }
 
-// SELECTION -> toolbar
+/* SELECTION -> toolbar & offsets (stable char offsets) */
 let lastRange = null;
 function selectionChanged(){
   const holder = document.getElementById('__raw_text_holder');
@@ -385,75 +415,50 @@ function selectionChanged(){
   if(!sel || sel.rangeCount === 0) return hideToolbar();
   const range = sel.getRangeAt(0);
   if(!holder.contains(range.commonAncestorContainer)) return hideToolbar();
-  // compute offsets
   const start = getCharacterOffsetWithin(holder, range.startContainer, range.startOffset);
   const end = getCharacterOffsetWithin(holder, range.endContainer, range.endOffset);
   if(start === -1 || end === -1 || start === end) return hideToolbar();
   const s = Math.min(start, end), e = Math.max(start, end);
   state.pendingSelection = { start: s, end: e, text: holder.textContent.slice(s,e) };
   lastRange = range.cloneRange();
-  // position toolbar near selection bounding rect
   const rect = range.getBoundingClientRect();
   const t = toolbar;
   t.style.display = 'flex';
-  // adjust position so it doesn't go outside viewport
   const left = Math.max(8, rect.left + rect.width/2 - 80 + window.scrollX);
   const top = Math.max(8, rect.top - 40 + window.scrollY);
   t.style.left = left + 'px';
   t.style.top = top + 'px';
-  // update annotate preview
   selPreview.textContent = `"${state.pendingSelection.text.length>120 ? state.pendingSelection.text.slice(0,120)+'…' : state.pendingSelection.text}"`;
 }
-
 function hideToolbar(){ toolbar.style.display = 'none'; state.pendingSelection = null; lastRange = null; }
 
-// clear selection UI
+/* selection actions */
 function clearSelectionUI(){ window.getSelection().removeAllRanges(); hideToolbar(); }
+function openAnnotModal(){ if(!state.pendingSelection) return; annotModal.style.display = 'flex'; noteInput.value = ''; setTimeout(()=>noteInput.focus(), 50); }
+function quickHighlight(){ if(!state.pendingSelection) return; const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || null; addAnnotation(state.currentReadingId, state.pendingSelection.start, state.pendingSelection.end, '', author); clearSelectionUI(); }
+function saveAnnotationFromModal(){ const note = noteInput.value.trim(); const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || null; if(!state.pendingSelection) { alert('No selection.'); annotModal.style.display='none'; return; } addAnnotation(state.currentReadingId, state.pendingSelection.start, state.pendingSelection.end, note, author); annotModal.style.display = 'none'; clearSelectionUI(); }
 
-// OPEN annotation modal
-function openAnnotModal(){
-  if(!state.pendingSelection) return;
-  annotModal.style.display = 'flex';
-  noteInput.value = '';
-  // populate author value from saved
-  const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || '';
-  // focus
-  setTimeout(()=>noteInput.focus(), 50);
-}
-
-// QUICK highlight without a note
-function quickHighlight(){
-  if(!state.pendingSelection) return;
-  const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || null;
-  addAnnotation(state.currentReadingId, state.pendingSelection.start, state.pendingSelection.end, '', author);
-  clearSelectionUI();
-}
-
-// SAVE annotation modal
-function saveAnnotationFromModal(){
-  const note = noteInput.value.trim();
-  const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || null;
-  if(!state.pendingSelection) { alert('No selection.'); annotModal.style.display='none'; return; }
-  addAnnotation(state.currentReadingId, state.pendingSelection.start, state.pendingSelection.end, note, author);
-  annotModal.style.display = 'none';
-  clearSelectionUI();
-}
-
-// create and persist annotation
+/* add / delete annotation */
 function addAnnotation(readingId, start, end, note, author){
   if(!readingId) return alert('No reading selected.');
-  const id = 'a_' + Date.now();
+  const id = 'a_' + Date.now() + '_' + Math.floor(Math.random()*1000);
   const ann = { id, start, end, note, author, created_at: (new Date()).toISOString() };
   if(!state.annotations[readingId]) state.annotations[readingId] = [];
   state.annotations[readingId].push(ann);
   saveAll();
-  // re-render
   const holder = document.getElementById('__raw_text_holder');
   if(holder) renderAnnotationsInto(holder, readingId);
   renderAnnotationList();
 }
+function deleteAnnotation(aid){
+  const id = state.currentReadingId;
+  if(!id) return;
+  state.annotations[id] = (state.annotations[id] || []).filter(a=> a.id !== aid);
+  saveAll();
+  openReading(id);
+}
 
-// render annotations list in sidebar
+/* render annotation list and handlers */
 function renderAnnotationList(){
   const id = state.currentReadingId;
   const anns = (state.annotations[id] || []).slice().sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
@@ -469,7 +474,6 @@ function renderAnnotationList(){
       <div class="muted" style="margin-top:6px"><em>Excerpt:</em> "${escapeHtml(excerpt)}"</div>
     </div>`;
   }).join('');
-  // add handlers
   Array.from(annotationsList.querySelectorAll('.annotation-item')).forEach(el=>{
     el.addEventListener('click', (e)=>{
       const aid = el.dataset.aid;
@@ -485,19 +489,17 @@ function renderAnnotationList(){
   });
 }
 
-// jump to annotation and briefly flash
+/* jump to annotation */
 function jumpToAnnotation(aid){
   const id = state.currentReadingId;
   const anns = state.annotations[id] || [];
   const a = anns.find(x=>x.id===aid);
   if(!a) return;
-  // rebuild and find element
   const holder = document.getElementById('__raw_text_holder');
   renderAnnotationsInto(holder, id);
   const el = holder.querySelector(`[data-ann-id="${aid}"]`);
   if(el){
     el.scrollIntoView({behavior:'smooth', block:'center'});
-    // flash
     const old = el.style.boxShadow;
     el.style.boxShadow = '0 0 0 3px rgba(246,192,125,0.6)';
     setTimeout(()=> el.style.boxShadow = old, 900);
@@ -506,16 +508,7 @@ function jumpToAnnotation(aid){
   }
 }
 
-// delete annotation
-function deleteAnnotation(aid){
-  const id = state.currentReadingId;
-  if(!id) return;
-  state.annotations[id] = (state.annotations[id] || []).filter(a=> a.id !== aid);
-  saveAll();
-  openReading(id);
-}
-
-// HELPERS: compute character offset inside container
+/* helper: compute char offsets in container */
 function getCharacterOffsetWithin(containerEl, node, offset) {
   let chars = 0;
   const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, null, false);
@@ -530,36 +523,19 @@ function getCharacterOffsetWithin(containerEl, node, offset) {
 }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
 
-// utility: clear selection and hide toolbar when clicking elsewhere
+/* click outside and keyboard shortcuts */
 document.addEventListener('click', (e)=>{
   if(!toolbar.contains(e.target) && !annotModal.contains(e.target) && !e.target.closest('.highlight')) {
-    // if clicked outside selection and not clicking a highlight, clear selection
-    // BUT if click on annotation list, we want to keep it; handled above
-    // small delay to allow toolbar's clicks to register
     setTimeout(()=> { if(!document.getSelection().toString()) clearSelectionUI(); }, 50);
   }
 });
-
-// expose simple keyboard shortcuts
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') { annotModal.style.display='none'; clearSelectionUI(); }
-  if(e.ctrlKey && e.key === 'e') { // export
-    e.preventDefault(); exportAll();
-  }
+  if(e.ctrlKey && e.key === 'e'){ e.preventDefault(); exportAll(); }
 });
 
-// initial state if no readings - optional sample
-if(Object.keys(state.readings).length === 0 && !localStorage.getItem('homely_sample_added')){
-  const id = 'r_demo';
-  state.readings[id] = { id, title: 'Demo reading', body: 'Welcome — select some text to annotate.\n\nThis simple local annotator saves notes to your browser (localStorage). You can upload .txt/.md files using Upload. Use Export to back up.' , created_at: (new Date()).toISOString(), filename: 'demo' };
-  localStorage.setItem('homely_sample_added','1');
-  saveAll();
-  renderReadingList();
-  openReading(id);
-}
-
-// Password hint for user (not security)
-console.log('Homely Annotator loaded. Edit PASSWORD at top of index.html to change shared password.');
+/* utility: when there's no data show a small comment for first-time use */
+console.log('Homely Annotator loaded. Edit PASSWORD at top of index.html to change the shared password.');
 
 </script>
 </body>
