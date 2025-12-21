@@ -1,0 +1,262 @@
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Annotate</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin: 0; padding: 0; display:flex; min-height:100vh;}
+    header { padding: 1rem; border-bottom: 1px solid #eee; background:#fafafa; width:100%;}
+    .container { display:flex; gap:1rem; width:100%; padding:1rem; }
+    .content { flex:1; max-width:800px; }
+    .sidebar { width:320px; border-left:1px solid #eee; padding-left:1rem; }
+    .highlight { background: #fffb91; cursor: pointer; }
+    .annotation-item { margin-bottom: 0.75rem; padding-bottom:0.5rem; border-bottom: 1px dashed #eee; }
+    .btn { padding:0.4rem 0.6rem; border-radius:6px; border:1px solid #ddd; background: #fff; cursor:pointer; }
+    .toolbar { display:flex; gap:0.5rem; align-items:center; }
+    .hidden { display:none; }
+    textarea { width:100%; min-height:80px; }
+  </style>
+</head>
+<body>
+<header>
+  <strong>Reading</strong>
+  <div style="float:right" id="auth-area"></div>
+</header>
+
+<div class="container">
+  <main class="content">
+    <h2 id="post-title">Post title</h2>
+    <div id="post-content" style="line-height:1.6;"></div>
+
+    <div style="margin-top:1rem;" id="annotation-ui" class="hidden">
+      <h4>Add annotation</h4>
+      <div>Selected text: <em id="selected-text"></em></div>
+      <textarea id="annotation-text" placeholder="Write your annotation"></textarea>
+      <div style="margin-top:0.5rem;">
+        <button class="btn" id="save-annotation">Save annotation</button>
+        <button class="btn" id="cancel-annotation">Cancel</button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="sidebar">
+    <div class="toolbar">
+      <button class="btn" id="refresh">Refresh</button>
+      <button class="btn" id="login-btn">Sign in</button>
+      <button class="btn" id="logout-btn" style="display:none;">Sign out</button>
+    </div>
+
+    <h4>Annotations</h4>
+    <div id="annotations-list">Loading annotations...</div>
+  </aside>
+</div>
+
+<!-- Dependencies (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+
+<script>
+/*
+  Configuration - REPLACE these with your Supabase project values
+  - Create a Supabase project: https://supabase.com
+  - Create table "posts": (id serial primary key, slug text unique, title text, body_markdown text)
+  - Create table "annotations": (id serial primary key, post_id integer references posts(id), start_idx integer, end_idx integer, note text, author text, created_at timestamptz default now())
+*/
+const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ---------- Helpers for selection -> char offsets ----------
+function getCharacterOffsetWithin(containerEl, node, offset) {
+  // Compute character offset of (node, offset) relative to containerEl.textContent
+  let chars = 0;
+  const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, null, false);
+  let currentNode;
+  while ((currentNode = walker.nextNode())) {
+    if (currentNode === node) {
+      return chars + offset;
+    }
+    chars += currentNode.textContent.length;
+  }
+  return -1;
+}
+
+// build annotated HTML from text and annotation ranges (non-overlapping)
+function buildAnnotatedHtml(text, annotations) {
+  // annotations: [{start_idx, end_idx, note, author, id}]
+  annotations.sort((a,b)=>a.start_idx - b.start_idx);
+  let out = "";
+  let cursor = 0;
+  for (const ann of annotations) {
+    if (ann.start_idx > cursor) {
+      out += escapeHtml(text.slice(cursor, ann.start_idx));
+    }
+    const highlighted = escapeHtml(text.slice(ann.start_idx, ann.end_idx));
+    // use data attributes for tooltip / id
+    out += `<span class="highlight" data-ann-id="${ann.id}" title="${escapeHtml(ann.author||'')}: ${escapeHtml(ann.note)}">${highlighted}</span>`;
+    cursor = ann.end_idx;
+  }
+  if (cursor < text.length) out += escapeHtml(text.slice(cursor));
+  // convert newlines to <br> so paragraphs look fine; we render markdown separately so we won't do this normally.
+  return out.replace(/\n/g, "<br>");
+}
+
+function escapeHtml(s){ return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"','&quot;'); }
+
+// ---------- App logic ----------
+const postSlug = "demo-post"; // in production, route or slug per URL
+let currentPost = null;
+let annotations = []; // cached for current post
+let pendingSelection = null; // {start_idx, end_idx, text}
+
+async function loadPostAndAnnotations() {
+  document.getElementById("post-title").innerText = "Loading...";
+  // Fetch post by slug
+  const { data: postsData, error: pErr } = await supabase.from('posts').select('*').eq('slug', postSlug).limit(1);
+  if (pErr) { console.error(pErr); document.getElementById("post-title").innerText = "Error loading post"; return; }
+  if (!postsData || postsData.length === 0) {
+    // Insert demo post if none exists (first-time)
+    const demoBody = `This is a demo post. Select any piece of text and click Annotate to leave a comment.\n\nTry selecting a sentence.`;
+    const { data: ins, error: insErr } = await supabase.from('posts').insert([{slug: postSlug, title:"Demo Post", body_markdown: demoBody}]).select().single();
+    if (insErr) { console.error(insErr); return; }
+    currentPost = ins;
+  } else {
+    currentPost = postsData[0];
+  }
+
+  document.getElementById("post-title").innerText = currentPost.title;
+  // Render markdown to plaintext container for consistent offsets. To keep offsets stable, we render plain text, then map annotations by char index in body_markdown.
+  // We'll show rendered markdown below but use the raw text for range calculations.
+  const raw = currentPost.body_markdown;
+  // Render using marked into the post-content (but for selection offsets we rely on text nodes in this container)
+  const container = document.getElementById("post-content");
+  container.innerHTML = marked.parse(raw);
+
+  // load annotations for this post
+  const { data: anns, error: aErr } = await supabase.from('annotations').select('*').eq('post_id', currentPost.id);
+  if (aErr) { console.error(aErr); annotations = []; } else annotations = anns || [];
+
+  // convert annotations so we can highlight in the rendered HTML:
+  // We'll compute annotated HTML using the original raw text and swap into a preformatted container for accurate char offsets.
+  // Simpler approach: create a plain div with textContent equal to raw, and then insert highlighted spans based on indexes.
+  const textHolder = document.createElement('div');
+  textHolder.style.whiteSpace = 'pre-wrap';
+  textHolder.id = '__raw_text_holder';
+  textHolder.innerHTML = buildAnnotatedHtml(raw, annotations);
+  // Replace the rendered markdown with annotated plain text view (or keep markdown and rely on a more complex mapping).
+  // For the demo, we'll show the annotated plain text to keep indexing simple.
+  container.innerHTML = "";
+  container.appendChild(textHolder);
+
+  // show annotation list
+  refreshAnnotationList();
+}
+
+function refreshAnnotationList(){
+  const list = document.getElementById('annotations-list');
+  if (!annotations || annotations.length===0) { list.innerHTML = "<em>No annotations yet</em>"; return; }
+  annotations.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  list.innerHTML = annotations.map(a=>`
+    <div class="annotation-item">
+      <div><strong>${escapeHtml(a.author||'Anonymous')}</strong> · <small>${new Date(a.created_at).toLocaleString()}</small></div>
+      <div style="margin-top:0.25rem;">${escapeHtml(a.note)}</div>
+      <div style="margin-top:0.25rem; font-size:0.9rem; color:#555;"><em>Excerpt:</em> "${escapeHtml(currentPost.body_markdown.slice(a.start_idx, a.end_idx))}"</div>
+    </div>
+  `).join('');
+}
+
+// selection handling
+document.addEventListener('selectionchange', ()=>{
+  const container = document.getElementById('__raw_text_holder');
+  if (!container) return;
+  const sel = window.getSelection();
+  if (sel.rangeCount === 0) {
+    pendingSelection = null;
+    return;
+  }
+  const range = sel.getRangeAt(0);
+  if (!container.contains(range.commonAncestorContainer)) { pendingSelection = null; return; } // outside
+
+  const start = getCharacterOffsetWithin(container, range.startContainer, range.startOffset);
+  const end = getCharacterOffsetWithin(container, range.endContainer, range.endOffset);
+  if (start===-1 || end===-1 || start===end) { pendingSelection = null; return; }
+  // store normalized
+  const s = Math.min(start,end), e = Math.max(start,end);
+  pendingSelection = {start_idx: s, end_idx: e, text: container.textContent.slice(s,e)};
+});
+
+// annotate flow
+document.addEventListener('mouseup', (ev)=>{
+  if (!pendingSelection) return;
+  // show small UI to add annotation
+  document.getElementById('selected-text').innerText = pendingSelection.text;
+  document.getElementById('annotation-text').value = "";
+  document.getElementById('annotation-ui').classList.remove('hidden');
+});
+
+// cancel / save
+document.getElementById('cancel-annotation').addEventListener('click', ()=>{
+  document.getElementById('annotation-ui').classList.add('hidden');
+  window.getSelection().removeAllRanges();
+  pendingSelection = null;
+});
+
+document.getElementById('save-annotation').addEventListener('click', async ()=>{
+  if (!pendingSelection) return alert('No selection.');
+  const note = document.getElementById('annotation-text').value.trim();
+  if (!note) return alert('Please write a note for your annotation.');
+  // author: from auth or prompt for name
+  let user = (await supabase.auth.getUser()).data?.user;
+  let author = user?.email || localStorage.getItem('annotator_name') || null;
+  if (!author) {
+    author = prompt('Name to show on annotations (or Cancel for anonymous)') || null;
+    if (author) localStorage.setItem('annotator_name', author);
+  }
+
+  const payload = {
+    post_id: currentPost.id,
+    start_idx: pendingSelection.start_idx,
+    end_idx: pendingSelection.end_idx,
+    note,
+    author
+  };
+  const { data, error } = await supabase.from('annotations').insert([payload]).select().single();
+  if (error) { console.error(error); alert('Error saving'); return; }
+  annotations.push(data);
+  // re-render annotated text
+  const raw = currentPost.body_markdown;
+  const container = document.getElementById('__raw_text_holder');
+  container.innerHTML = buildAnnotatedHtml(raw, annotations);
+  refreshAnnotationList();
+  document.getElementById('annotation-ui').classList.add('hidden');
+  pendingSelection = null;
+  window.getSelection().removeAllRanges();
+});
+
+// simple auth UI (optional)
+document.getElementById('login-btn').addEventListener('click', async ()=>{
+  const email = prompt('Enter your email to sign in (magic link):');
+  if (!email) return;
+  const { error } = await supabase.auth.signInWithOtp({ email });
+  if (error) { alert('Error sending link: '+error.message); }
+  else alert('Magic link sent. Check your email.');
+});
+
+document.getElementById('logout-btn').addEventListener('click', async ()=>{
+  await supabase.auth.signOut();
+  document.getElementById('logout-btn').style.display='none';
+  document.getElementById('login-btn').style.display='inline-block';
+});
+
+// refresh
+document.getElementById('refresh').addEventListener('click', loadPostAndAnnotations);
+
+// initial load
+loadPostAndAnnotations();
+
+</script>
+</body>
+</html>
