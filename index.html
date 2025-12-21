@@ -1,77 +1,522 @@
-<!-- index.html -->
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Annotate</title>
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin: 0; padding: 0; display:flex; min-height:100vh;}
-    header { padding: 1rem; border-bottom: 1px solid #eee; background:#fafafa; width:100%;}
-    .container { display:flex; gap:1rem; width:100%; padding:1rem; }
-    .content { flex:1; max-width:800px; }
-    .sidebar { width:320px; border-left:1px solid #eee; padding-left:1rem; }
-    .highlight { background: #fffb91; cursor: pointer; }
-    .annotation-item { margin-bottom: 0.75rem; padding-bottom:0.5rem; border-bottom: 1px dashed #eee; }
-    .btn { padding:0.4rem 0.6rem; border-radius:6px; border:1px solid #ddd; background: #fff; cursor:pointer; }
-    .toolbar { display:flex; gap:0.5rem; align-items:center; }
-    .hidden { display:none; }
-    textarea { width:100%; min-height:80px; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Homely Annotator (local)</title>
+<style>
+  /* HOMELY THEME - warm tones, rounded corners, comfy spacing */
+  :root{
+    --bg:#fff8f2;
+    --panel:#fff;
+    --muted:#6b5b4a;
+    --accent:#f6c07d;
+    --accent-2:#ffb86b;
+    --card-shadow: 0 6px 18px rgba(98,76,54,0.08);
+    --glass: rgba(255,255,255,0.6);
+  }
+  [data-theme="dark"]{
+    --bg:#0f1213;
+    --panel:#111314;
+    --muted:#bfbfbf;
+    --accent:#b36b1b;
+    --accent-2:#d88b3a;
+    --card-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,var(--bg),#fff); color:var(--muted);}
+  .app{display:flex; height:100vh; gap:12px; padding:18px;}
+  .left, .center, .right { background:var(--panel); border-radius:14px; box-shadow:var(--card-shadow); padding:14px; }
+  .left{width:260px; flex-shrink:0; display:flex; flex-direction:column; gap:12px;}
+  .center{flex:1; display:flex; flex-direction:column; gap:12px; overflow:auto;}
+  .right{width:320px; flex-shrink:0; overflow:auto;}
+  h1{margin:0; font-size:1.1rem}
+  .btn{background:linear-gradient(180deg,var(--accent),var(--accent-2)); border:none; color:#fff; padding:8px 10px; border-radius:10px; cursor:pointer;}
+  .btn-ghost{background:transparent; border:1px solid rgba(0,0,0,0.06); padding:8px 10px; border-radius:10px; cursor:pointer;}
+  .small{font-size:0.9rem; color:var(--muted)}
+  .list-item{padding:8px;border-radius:10px; cursor:pointer; display:flex; gap:8px; align-items:center;}
+  .list-item:hover{background:var(--glass);}
+  input[type="file"]{display:none;}
+  .reading-title{font-weight:600; font-size:1.05rem; margin-bottom:6px;}
+  #reading { white-space: pre-wrap; line-height:1.6; padding:14px; border-radius:10px; background:linear-gradient(180deg,transparent, rgba(0,0,0,0.02)); min-height:300px; }
+  .highlight { background: #fff49a; border-radius:4px; padding:0 1px; cursor:pointer; }
+  .floating-toolbar{position:absolute; z-index:9999; background:var(--panel); border-radius:8px; box-shadow:var(--card-shadow); padding:6px; display:flex; gap:6px; align-items:center; }
+  .modal {position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,10,10,0.4); z-index:10000;}
+  .card {background:var(--panel); padding:18px; border-radius:12px; width:420px; box-shadow:var(--card-shadow);}
+  .field{margin-bottom:8px}
+  .muted{color:var(--muted); font-size:0.9rem}
+  .annotation-item{padding:8px; border-radius:8px; margin-bottom:8px; background:linear-gradient(180deg, rgba(246,192,125,0.06), rgba(0,0,0,0.01))}
+  .meta{font-size:0.85rem; color:var(--muted);}
+  .topbar{display:flex; justify-content:space-between; align-items:center; gap:12px;}
+  .footer-note{font-size:0.82rem; color:var(--muted); margin-top:8px}
+  .chip{background:rgba(0,0,0,0.03); padding:6px 8px; border-radius:999px; font-size:0.85rem}
+  /* selection highlight animation */
+  @keyframes pop { from { transform:scale(.98); opacity:0 } to { transform:none; opacity:1 } }
+  .floating-toolbar{animation:pop .12s ease-out;}
+  /* responsive */
+  @media (max-width:900px){ .left{display:none} .right{display:none} .app{padding:12px} }
+</style>
 </head>
 <body>
-<header>
-  <strong>Reading</strong>
-  <div style="float:right" id="auth-area"></div>
-</header>
-
-<div class="container">
-  <main class="content">
-    <h2 id="post-title">Post title</h2>
-    <div id="post-content" style="line-height:1.6;"></div>
-
-    <div style="margin-top:1rem;" id="annotation-ui" class="hidden">
-      <h4>Add annotation</h4>
-      <div>Selected text: <em id="selected-text"></em></div>
-      <textarea id="annotation-text" placeholder="Write your annotation"></textarea>
-      <div style="margin-top:0.5rem;">
-        <button class="btn" id="save-annotation">Save annotation</button>
-        <button class="btn" id="cancel-annotation">Cancel</button>
-      </div>
+<div id="password-modal" class="modal" aria-hidden="false">
+  <div class="card" style="max-width:520px;">
+    <h1>Enter shared password</h1>
+    <div class="muted" style="margin-bottom:12px">This is simple client-side gating for local use. Change the password in the script (PASSWORD variable).</div>
+    <div class="field">
+      <input id="pw-input" placeholder="Shared password" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"/>
     </div>
-  </main>
-
-  <aside class="sidebar">
-    <div class="toolbar">
-      <button class="btn" id="refresh">Refresh</button>
-      <button class="btn" id="login-btn">Sign in</button>
-      <button class="btn" id="logout-btn" style="display:none;">Sign out</button>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="pw-submit" class="btn">Unlock</button>
     </div>
-
-    <h4>Annotations</h4>
-    <div id="annotations-list">Loading annotations...</div>
-  </aside>
+  </div>
 </div>
 
-<!-- Dependencies (CDN) -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+<div class="app" id="app" style="display:none" data-theme="light">
+  <div class="left">
+    <div class="topbar">
+      <div>
+        <h1>Readings</h1>
+        <div class="muted">Upload / choose a reading</div>
+      </div>
+      <div style="text-align:right">
+        <button id="theme-toggle" class="chip small">🌙</button>
+      </div>
+    </div>
+
+    <div>
+      <input id="file-input" type="file" accept=".txt,.md" />
+      <label for="file-input" class="btn-ghost" style="display:inline-block; cursor:pointer;">Upload</label>
+      <button id="new-btn" class="btn-ghost">New</button>
+    </div>
+
+    <div id="reading-list" style="margin-top:10px; overflow:auto;"></div>
+
+    <hr style="border:none; height:1px; background:rgba(0,0,0,0.04); margin:12px 0;" />
+    <div>
+      <button id="export-btn" class="btn-ghost">Export data</button>
+      <button id="import-btn" class="btn-ghost">Import data</button>
+      <input id="import-file" type="file" accept="application/json" style="display:none">
+      <div class="footer-note">Data stored in <code>localStorage</code>. Backup with Export.</div>
+    </div>
+  </div>
+
+  <div class="center">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div class="reading-title" id="title-area">No reading selected</div>
+        <div class="muted" id="meta-area"></div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="muted small">Annotator name</div>
+        <input id="author-input" placeholder="Your name (saved locally)" style="padding:6px 8px; border-radius:8px; border:1px solid #ddd"/>
+      </div>
+    </div>
+
+    <div id="reading" tabindex="0" role="article" aria-label="Reading text"></div>
+    <div class="muted" style="margin-top:10px">Select any text to annotate. A small toolbar will appear. Highlights are stored locally.</div>
+  </div>
+
+  <div class="right">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0">Annotations</h2>
+      <div class="muted small">Click to jump</div>
+    </div>
+    <div id="annotations-list" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- floating toolbar -->
+<div id="toolbar" class="floating-toolbar" style="display:none;">
+  <button id="annotate-btn" class="btn-ghost">✍️ Annotate</button>
+  <button id="highlight-btn" class="btn-ghost">🔆 Highlight</button>
+  <button id="clear-selection" class="btn-ghost">✖</button>
+</div>
+
+<!-- annotation modal -->
+<div id="annot-modal" class="modal" style="display:none;">
+  <div class="card" role="dialog" aria-modal="true">
+    <h2 style="margin-top:0">Add annotation</h2>
+    <div class="muted" id="sel-preview" style="margin-bottom:8px"></div>
+    <div class="field">
+      <textarea id="note-input" placeholder="Write a short note" style="width:100%; min-height:96px; padding:8px; border-radius:8px; border:1px solid #ddd"></textarea>
+    </div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="save-annot" class="btn">Save</button>
+      <button id="cancel-annot" class="btn-ghost">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /*
-  Configuration - REPLACE these with your Supabase project values
-  - Create a Supabase project: https://supabase.com
-  - Create table "posts": (id serial primary key, slug text unique, title text, body_markdown text)
-  - Create table "annotations": (id serial primary key, post_id integer references posts(id), start_idx integer, end_idx integer, note text, author text, created_at timestamptz default now())
+  SIMPLE LOCAL ANNOTATOR
+  - Configure PASSWORD below
+  - Data saved in localStorage keys: 'homely_readings' (object) and 'homely_annotations' (object)
+  - Works offline in a local browser. For lightweight security, this uses a client-side password.
 */
-const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
 
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PASSWORD = "letmein"; // <-- change this to your shared password
+const STORAGE_READINGS = 'homely_readings';
+const STORAGE_ANNOT = 'homely_annotations';
 
-// ---------- Helpers for selection -> char offsets ----------
+const state = {
+  currentReadingId: null,
+  readings: {},        // id -> {id,title,body,created_at, filename}
+  annotations: {},     // readingId -> [{id, start, end, note, author, created_at}]
+  pendingSelection: null,
+  theme: 'light'
+};
+
+// UTIL: load/save
+function saveAll(){ localStorage.setItem(STORAGE_READINGS, JSON.stringify(state.readings)); localStorage.setItem(STORAGE_ANNOT, JSON.stringify(state.annotations)); }
+function loadAll(){
+  try{ state.readings = JSON.parse(localStorage.getItem(STORAGE_READINGS) || '{}'); }
+  catch(e){ state.readings = {} }
+  try{ state.annotations = JSON.parse(localStorage.getItem(STORAGE_ANNOT) || '{}'); }
+  catch(e){ state.annotations = {} }
+}
+loadAll();
+
+// DOM refs
+const app = document.getElementById('app');
+const pwModal = document.getElementById('password-modal');
+const pwInput = document.getElementById('pw-input');
+const pwSubmit = document.getElementById('pw-submit');
+const fileInput = document.getElementById('file-input');
+const importFile = document.getElementById('import-file');
+const readingList = document.getElementById('reading-list');
+const readingEl = document.getElementById('reading');
+const titleArea = document.getElementById('title-area');
+const metaArea = document.getElementById('meta-area');
+const annotationsList = document.getElementById('annotations-list');
+const toolbar = document.getElementById('toolbar');
+const annotModal = document.getElementById('annot-modal');
+const selPreview = document.getElementById('sel-preview');
+const noteInput = document.getElementById('note-input');
+const authorInput = document.getElementById('author-input');
+const themeToggle = document.getElementById('theme-toggle');
+
+// Password gating (simple)
+pwSubmit.addEventListener('click', tryPw);
+pwInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryPw(); });
+function tryPw(){
+  const v = pwInput.value || '';
+  if(v === PASSWORD){
+    sessionStorage.setItem('homely_unlocked', '1');
+    pwModal.style.display = 'none';
+    app.style.display = 'flex';
+    initUI();
+  } else {
+    pwInput.value = '';
+    pwInput.placeholder = 'Wrong password, try again';
+    pwInput.focus();
+  }
+}
+if(sessionStorage.getItem('homely_unlocked') === '1'){ pwModal.style.display = 'none'; app.style.display = 'flex'; initUI(); }
+
+// INIT UI after unlock
+function initUI(){
+  // theme
+  const savedTheme = localStorage.getItem('homely_theme') || 'light';
+  setTheme(savedTheme);
+  themeToggle.addEventListener('click', ()=> setTheme(state.theme === 'light' ? 'dark' : 'light'));
+  // file upload
+  fileInput.addEventListener('change', handleUpload);
+  document.getElementById('new-btn').addEventListener('click', createNewReading);
+  document.getElementById('export-btn').addEventListener('click', exportAll);
+  document.getElementById('import-btn').addEventListener('click', ()=> importFile.click());
+  importFile.addEventListener('change', handleImport);
+  document.getElementById('author-input').value = localStorage.getItem('homely_author') || '';
+  document.getElementById('author-input').addEventListener('change', ()=> localStorage.setItem('homely_author', document.getElementById('author-input').value));
+  // toolbar buttons
+  document.getElementById('annotate-btn').addEventListener('click', openAnnotModal);
+  document.getElementById('highlight-btn').addEventListener('click', quickHighlight);
+  document.getElementById('clear-selection').addEventListener('click', clearSelectionUI);
+  document.getElementById('cancel-annot').addEventListener('click', ()=> { annotModal.style.display='none'; clearSelectionUI(); });
+  document.getElementById('save-annot').addEventListener('click', saveAnnotationFromModal);
+  // click highlight to show note
+  readingEl.addEventListener('click', (e)=>{
+    const span = e.target.closest('.highlight');
+    if(!span) return;
+    const aid = span.dataset.annId;
+    const rid = state.currentReadingId;
+    const ann = (state.annotations[rid] || []).find(a=>String(a.id)===String(aid));
+    if(ann){
+      alert(`"${ ann.note }"\n— ${ann.author||'Anonymous'} (${new Date(ann.created_at).toLocaleString()})`);
+    }
+  });
+  // selection handling
+  document.addEventListener('selectionchange', selectionChanged);
+  // initial render reading list
+  renderReadingList();
+  // if there are readings, select the most recent
+  const ids = Object.keys(state.readings).sort((a,b)=> new Date(state.readings[b].created_at)-new Date(state.readings[a].created_at));
+  if(ids.length) openReading(ids[0]);
+}
+
+// THEME
+function setTheme(t){
+  state.theme = t;
+  document.getElementById('app').setAttribute('data-theme', t);
+  localStorage.setItem('homely_theme', t);
+  themeToggle.textContent = t==='light' ? '🌙' : '☀️';
+}
+
+// UPLOAD / CREATE / IMPORT / EXPORT
+function handleUpload(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=> {
+    const text = String(reader.result || '');
+    const id = 'r_' + Date.now();
+    const title = file.name.replace(/\.[^/.]+$/, "");
+    state.readings[id] = { id, title, body: text, created_at: (new Date()).toISOString(), filename: file.name };
+    saveAll();
+    renderReadingList();
+    openReading(id);
+    fileInput.value = '';
+  };
+  reader.readAsText(file);
+}
+function createNewReading(){
+  const title = prompt('Title for new reading') || `Untitled ${Object.keys(state.readings).length+1}`;
+  const id = 'r_' + Date.now();
+  state.readings[id] = { id, title, body: 'Paste your text here or click Edit → Replace', created_at: (new Date()).toISOString(), filename: null };
+  saveAll();
+  renderReadingList();
+  openReading(id);
+}
+function exportAll(){
+  const payload = { readings: state.readings, annotations: state.annotations };
+  const b = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(b);
+  const a = document.createElement('a'); a.href = url; a.download = 'homely_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+function handleImport(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=> {
+    try{
+      const data = JSON.parse(r.result);
+      state.readings = data.readings || state.readings;
+      state.annotations = data.annotations || state.annotations;
+      saveAll();
+      renderReadingList();
+      alert('Imported.');
+    }catch(err){ alert('Invalid JSON'); }
+    importFile.value = '';
+  };
+  r.readAsText(f);
+}
+
+// RENDER reading list
+function renderReadingList(){
+  const keys = Object.keys(state.readings).sort((a,b)=> new Date(state.readings[b].created_at)-new Date(state.readings[a].created_at));
+  readingList.innerHTML = keys.length ? keys.map(id=>{
+    const r = state.readings[id];
+    return `<div class="list-item" data-id="${id}"><div style="flex:1"><strong>${escapeHtml(r.title)}</strong><div class="muted small">${r.filename ? r.filename : ''} • ${new Date(r.created_at).toLocaleDateString()}</div></div><div><button class="btn-ghost" data-action="edit" data-id="${id}">Edit</button></div></div>`;
+  }).join('') : `<div class="muted small">No readings yet</div>`;
+  // attach handlers
+  Array.from(readingList.querySelectorAll('.list-item')).forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      const id = el.dataset.id;
+      if(!id) return;
+      // if clicked an inner button, the event bubble might be different; handle edit separately
+      if(e.target && e.target.dataset && e.target.dataset.action==='edit'){ editReading(id); e.stopPropagation(); return; }
+      openReading(id);
+    });
+  });
+  Array.from(readingList.querySelectorAll('button[data-action="edit"]')).forEach(b=>{
+    b.addEventListener('click', (ev)=>{ const id = b.dataset.id; editReading(id); ev.stopPropagation(); });
+  });
+}
+
+// OPEN / RENDER a reading with annotations
+function openReading(id){
+  if(!state.readings[id]) return;
+  state.currentReadingId = id;
+  titleArea.textContent = state.readings[id].title;
+  metaArea.textContent = `${state.readings[id].filename || 'local text'} · ${new Date(state.readings[id].created_at).toLocaleString()}`;
+  readingEl.innerHTML = ''; // we'll create a raw text holder for stable offsets
+  const holder = document.createElement('div');
+  holder.id = '__raw_text_holder';
+  holder.style.whiteSpace = 'pre-wrap';
+  holder.style.outline = 'none';
+  holder.textContent = state.readings[id].body || '';
+  readingEl.appendChild(holder);
+  renderAnnotationsInto(holder, id);
+  renderAnnotationList();
+}
+
+// EDIT reading body (simple replace)
+function editReading(id){
+  const r = state.readings[id];
+  const newBody = prompt('Edit reading body (full text). Saving will replace the text and may shift annotation offsets. If you want to keep annotations stable, avoid major edits.', r.body);
+  if(newBody === null) return;
+  r.body = newBody;
+  r.created_at = r.created_at; // keep original created_at
+  saveAll();
+  openReading(id);
+}
+
+// convert annotations to HTML in the raw holder (non-overlapping assumption)
+function renderAnnotationsInto(holder, readingId){
+  const raw = holder.textContent || '';
+  const anns = (state.annotations[readingId] || []).slice().sort((a,b)=> a.start - b.start);
+  let out = '', cursor = 0;
+  for(const a of anns){
+    if(a.start > cursor) out += escapeHtml(raw.slice(cursor, a.start));
+    const excerpt = escapeHtml(raw.slice(a.start, a.end));
+    out += `<span class="highlight" data-ann-id="${a.id}" title="${escapeHtml(a.note || '')}">${excerpt}</span>`;
+    cursor = a.end;
+  }
+  if(cursor < raw.length) out += escapeHtml(raw.slice(cursor));
+  holder.innerHTML = out;
+}
+
+// SELECTION -> toolbar
+let lastRange = null;
+function selectionChanged(){
+  const holder = document.getElementById('__raw_text_holder');
+  if(!holder) return hideToolbar();
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount === 0) return hideToolbar();
+  const range = sel.getRangeAt(0);
+  if(!holder.contains(range.commonAncestorContainer)) return hideToolbar();
+  // compute offsets
+  const start = getCharacterOffsetWithin(holder, range.startContainer, range.startOffset);
+  const end = getCharacterOffsetWithin(holder, range.endContainer, range.endOffset);
+  if(start === -1 || end === -1 || start === end) return hideToolbar();
+  const s = Math.min(start, end), e = Math.max(start, end);
+  state.pendingSelection = { start: s, end: e, text: holder.textContent.slice(s,e) };
+  lastRange = range.cloneRange();
+  // position toolbar near selection bounding rect
+  const rect = range.getBoundingClientRect();
+  const t = toolbar;
+  t.style.display = 'flex';
+  // adjust position so it doesn't go outside viewport
+  const left = Math.max(8, rect.left + rect.width/2 - 80 + window.scrollX);
+  const top = Math.max(8, rect.top - 40 + window.scrollY);
+  t.style.left = left + 'px';
+  t.style.top = top + 'px';
+  // update annotate preview
+  selPreview.textContent = `"${state.pendingSelection.text.length>120 ? state.pendingSelection.text.slice(0,120)+'…' : state.pendingSelection.text}"`;
+}
+
+function hideToolbar(){ toolbar.style.display = 'none'; state.pendingSelection = null; lastRange = null; }
+
+// clear selection UI
+function clearSelectionUI(){ window.getSelection().removeAllRanges(); hideToolbar(); }
+
+// OPEN annotation modal
+function openAnnotModal(){
+  if(!state.pendingSelection) return;
+  annotModal.style.display = 'flex';
+  noteInput.value = '';
+  // populate author value from saved
+  const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || '';
+  // focus
+  setTimeout(()=>noteInput.focus(), 50);
+}
+
+// QUICK highlight without a note
+function quickHighlight(){
+  if(!state.pendingSelection) return;
+  const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || null;
+  addAnnotation(state.currentReadingId, state.pendingSelection.start, state.pendingSelection.end, '', author);
+  clearSelectionUI();
+}
+
+// SAVE annotation modal
+function saveAnnotationFromModal(){
+  const note = noteInput.value.trim();
+  const author = document.getElementById('author-input').value || localStorage.getItem('homely_author') || null;
+  if(!state.pendingSelection) { alert('No selection.'); annotModal.style.display='none'; return; }
+  addAnnotation(state.currentReadingId, state.pendingSelection.start, state.pendingSelection.end, note, author);
+  annotModal.style.display = 'none';
+  clearSelectionUI();
+}
+
+// create and persist annotation
+function addAnnotation(readingId, start, end, note, author){
+  if(!readingId) return alert('No reading selected.');
+  const id = 'a_' + Date.now();
+  const ann = { id, start, end, note, author, created_at: (new Date()).toISOString() };
+  if(!state.annotations[readingId]) state.annotations[readingId] = [];
+  state.annotations[readingId].push(ann);
+  saveAll();
+  // re-render
+  const holder = document.getElementById('__raw_text_holder');
+  if(holder) renderAnnotationsInto(holder, readingId);
+  renderAnnotationList();
+}
+
+// render annotations list in sidebar
+function renderAnnotationList(){
+  const id = state.currentReadingId;
+  const anns = (state.annotations[id] || []).slice().sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+  if(!anns.length){ annotationsList.innerHTML = '<div class="muted">No annotations yet</div>'; return; }
+  annotationsList.innerHTML = anns.map(a=>{
+    const excerpt = (state.readings[id] && state.readings[id].body) ? state.readings[id].body.slice(a.start, a.end) : '';
+    return `<div class="annotation-item" data-aid="${a.id}">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><strong>${escapeHtml(a.author || 'Anonymous')}</strong><div class="meta">${new Date(a.created_at).toLocaleString()}</div></div>
+        <div><button class="btn-ghost" data-action="del" data-id="${a.id}">Delete</button></div>
+      </div>
+      <div style="margin-top:6px">${escapeHtml(a.note || '(highlight)')}</div>
+      <div class="muted" style="margin-top:6px"><em>Excerpt:</em> "${escapeHtml(excerpt)}"</div>
+    </div>`;
+  }).join('');
+  // add handlers
+  Array.from(annotationsList.querySelectorAll('.annotation-item')).forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      const aid = el.dataset.aid;
+      jumpToAnnotation(aid);
+    });
+  });
+  Array.from(annotationsList.querySelectorAll('button[data-action="del"]')).forEach(b=>{
+    b.addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      const aid = b.dataset.id;
+      if(confirm('Delete this annotation?')){ deleteAnnotation(aid); }
+    });
+  });
+}
+
+// jump to annotation and briefly flash
+function jumpToAnnotation(aid){
+  const id = state.currentReadingId;
+  const anns = state.annotations[id] || [];
+  const a = anns.find(x=>x.id===aid);
+  if(!a) return;
+  // rebuild and find element
+  const holder = document.getElementById('__raw_text_holder');
+  renderAnnotationsInto(holder, id);
+  const el = holder.querySelector(`[data-ann-id="${aid}"]`);
+  if(el){
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    // flash
+    const old = el.style.boxShadow;
+    el.style.boxShadow = '0 0 0 3px rgba(246,192,125,0.6)';
+    setTimeout(()=> el.style.boxShadow = old, 900);
+  } else {
+    alert('Annotation not found (text may have changed).');
+  }
+}
+
+// delete annotation
+function deleteAnnotation(aid){
+  const id = state.currentReadingId;
+  if(!id) return;
+  state.annotations[id] = (state.annotations[id] || []).filter(a=> a.id !== aid);
+  saveAll();
+  openReading(id);
+}
+
+// HELPERS: compute character offset inside container
 function getCharacterOffsetWithin(containerEl, node, offset) {
-  // Compute character offset of (node, offset) relative to containerEl.textContent
   let chars = 0;
   const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, null, false);
   let currentNode;
@@ -83,179 +528,38 @@ function getCharacterOffsetWithin(containerEl, node, offset) {
   }
   return -1;
 }
+function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
 
-// build annotated HTML from text and annotation ranges (non-overlapping)
-function buildAnnotatedHtml(text, annotations) {
-  // annotations: [{start_idx, end_idx, note, author, id}]
-  annotations.sort((a,b)=>a.start_idx - b.start_idx);
-  let out = "";
-  let cursor = 0;
-  for (const ann of annotations) {
-    if (ann.start_idx > cursor) {
-      out += escapeHtml(text.slice(cursor, ann.start_idx));
-    }
-    const highlighted = escapeHtml(text.slice(ann.start_idx, ann.end_idx));
-    // use data attributes for tooltip / id
-    out += `<span class="highlight" data-ann-id="${ann.id}" title="${escapeHtml(ann.author||'')}: ${escapeHtml(ann.note)}">${highlighted}</span>`;
-    cursor = ann.end_idx;
+// utility: clear selection and hide toolbar when clicking elsewhere
+document.addEventListener('click', (e)=>{
+  if(!toolbar.contains(e.target) && !annotModal.contains(e.target) && !e.target.closest('.highlight')) {
+    // if clicked outside selection and not clicking a highlight, clear selection
+    // BUT if click on annotation list, we want to keep it; handled above
+    // small delay to allow toolbar's clicks to register
+    setTimeout(()=> { if(!document.getSelection().toString()) clearSelectionUI(); }, 50);
   }
-  if (cursor < text.length) out += escapeHtml(text.slice(cursor));
-  // convert newlines to <br> so paragraphs look fine; we render markdown separately so we won't do this normally.
-  return out.replace(/\n/g, "<br>");
+});
+
+// expose simple keyboard shortcuts
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') { annotModal.style.display='none'; clearSelectionUI(); }
+  if(e.ctrlKey && e.key === 'e') { // export
+    e.preventDefault(); exportAll();
+  }
+});
+
+// initial state if no readings - optional sample
+if(Object.keys(state.readings).length === 0 && !localStorage.getItem('homely_sample_added')){
+  const id = 'r_demo';
+  state.readings[id] = { id, title: 'Demo reading', body: 'Welcome — select some text to annotate.\n\nThis simple local annotator saves notes to your browser (localStorage). You can upload .txt/.md files using Upload. Use Export to back up.' , created_at: (new Date()).toISOString(), filename: 'demo' };
+  localStorage.setItem('homely_sample_added','1');
+  saveAll();
+  renderReadingList();
+  openReading(id);
 }
 
-function escapeHtml(s){ return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"','&quot;'); }
-
-// ---------- App logic ----------
-const postSlug = "demo-post"; // in production, route or slug per URL
-let currentPost = null;
-let annotations = []; // cached for current post
-let pendingSelection = null; // {start_idx, end_idx, text}
-
-async function loadPostAndAnnotations() {
-  document.getElementById("post-title").innerText = "Loading...";
-  // Fetch post by slug
-  const { data: postsData, error: pErr } = await supabase.from('posts').select('*').eq('slug', postSlug).limit(1);
-  if (pErr) { console.error(pErr); document.getElementById("post-title").innerText = "Error loading post"; return; }
-  if (!postsData || postsData.length === 0) {
-    // Insert demo post if none exists (first-time)
-    const demoBody = `This is a demo post. Select any piece of text and click Annotate to leave a comment.\n\nTry selecting a sentence.`;
-    const { data: ins, error: insErr } = await supabase.from('posts').insert([{slug: postSlug, title:"Demo Post", body_markdown: demoBody}]).select().single();
-    if (insErr) { console.error(insErr); return; }
-    currentPost = ins;
-  } else {
-    currentPost = postsData[0];
-  }
-
-  document.getElementById("post-title").innerText = currentPost.title;
-  // Render markdown to plaintext container for consistent offsets. To keep offsets stable, we render plain text, then map annotations by char index in body_markdown.
-  // We'll show rendered markdown below but use the raw text for range calculations.
-  const raw = currentPost.body_markdown;
-  // Render using marked into the post-content (but for selection offsets we rely on text nodes in this container)
-  const container = document.getElementById("post-content");
-  container.innerHTML = marked.parse(raw);
-
-  // load annotations for this post
-  const { data: anns, error: aErr } = await supabase.from('annotations').select('*').eq('post_id', currentPost.id);
-  if (aErr) { console.error(aErr); annotations = []; } else annotations = anns || [];
-
-  // convert annotations so we can highlight in the rendered HTML:
-  // We'll compute annotated HTML using the original raw text and swap into a preformatted container for accurate char offsets.
-  // Simpler approach: create a plain div with textContent equal to raw, and then insert highlighted spans based on indexes.
-  const textHolder = document.createElement('div');
-  textHolder.style.whiteSpace = 'pre-wrap';
-  textHolder.id = '__raw_text_holder';
-  textHolder.innerHTML = buildAnnotatedHtml(raw, annotations);
-  // Replace the rendered markdown with annotated plain text view (or keep markdown and rely on a more complex mapping).
-  // For the demo, we'll show the annotated plain text to keep indexing simple.
-  container.innerHTML = "";
-  container.appendChild(textHolder);
-
-  // show annotation list
-  refreshAnnotationList();
-}
-
-function refreshAnnotationList(){
-  const list = document.getElementById('annotations-list');
-  if (!annotations || annotations.length===0) { list.innerHTML = "<em>No annotations yet</em>"; return; }
-  annotations.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-  list.innerHTML = annotations.map(a=>`
-    <div class="annotation-item">
-      <div><strong>${escapeHtml(a.author||'Anonymous')}</strong> · <small>${new Date(a.created_at).toLocaleString()}</small></div>
-      <div style="margin-top:0.25rem;">${escapeHtml(a.note)}</div>
-      <div style="margin-top:0.25rem; font-size:0.9rem; color:#555;"><em>Excerpt:</em> "${escapeHtml(currentPost.body_markdown.slice(a.start_idx, a.end_idx))}"</div>
-    </div>
-  `).join('');
-}
-
-// selection handling
-document.addEventListener('selectionchange', ()=>{
-  const container = document.getElementById('__raw_text_holder');
-  if (!container) return;
-  const sel = window.getSelection();
-  if (sel.rangeCount === 0) {
-    pendingSelection = null;
-    return;
-  }
-  const range = sel.getRangeAt(0);
-  if (!container.contains(range.commonAncestorContainer)) { pendingSelection = null; return; } // outside
-
-  const start = getCharacterOffsetWithin(container, range.startContainer, range.startOffset);
-  const end = getCharacterOffsetWithin(container, range.endContainer, range.endOffset);
-  if (start===-1 || end===-1 || start===end) { pendingSelection = null; return; }
-  // store normalized
-  const s = Math.min(start,end), e = Math.max(start,end);
-  pendingSelection = {start_idx: s, end_idx: e, text: container.textContent.slice(s,e)};
-});
-
-// annotate flow
-document.addEventListener('mouseup', (ev)=>{
-  if (!pendingSelection) return;
-  // show small UI to add annotation
-  document.getElementById('selected-text').innerText = pendingSelection.text;
-  document.getElementById('annotation-text').value = "";
-  document.getElementById('annotation-ui').classList.remove('hidden');
-});
-
-// cancel / save
-document.getElementById('cancel-annotation').addEventListener('click', ()=>{
-  document.getElementById('annotation-ui').classList.add('hidden');
-  window.getSelection().removeAllRanges();
-  pendingSelection = null;
-});
-
-document.getElementById('save-annotation').addEventListener('click', async ()=>{
-  if (!pendingSelection) return alert('No selection.');
-  const note = document.getElementById('annotation-text').value.trim();
-  if (!note) return alert('Please write a note for your annotation.');
-  // author: from auth or prompt for name
-  let user = (await supabase.auth.getUser()).data?.user;
-  let author = user?.email || localStorage.getItem('annotator_name') || null;
-  if (!author) {
-    author = prompt('Name to show on annotations (or Cancel for anonymous)') || null;
-    if (author) localStorage.setItem('annotator_name', author);
-  }
-
-  const payload = {
-    post_id: currentPost.id,
-    start_idx: pendingSelection.start_idx,
-    end_idx: pendingSelection.end_idx,
-    note,
-    author
-  };
-  const { data, error } = await supabase.from('annotations').insert([payload]).select().single();
-  if (error) { console.error(error); alert('Error saving'); return; }
-  annotations.push(data);
-  // re-render annotated text
-  const raw = currentPost.body_markdown;
-  const container = document.getElementById('__raw_text_holder');
-  container.innerHTML = buildAnnotatedHtml(raw, annotations);
-  refreshAnnotationList();
-  document.getElementById('annotation-ui').classList.add('hidden');
-  pendingSelection = null;
-  window.getSelection().removeAllRanges();
-});
-
-// simple auth UI (optional)
-document.getElementById('login-btn').addEventListener('click', async ()=>{
-  const email = prompt('Enter your email to sign in (magic link):');
-  if (!email) return;
-  const { error } = await supabase.auth.signInWithOtp({ email });
-  if (error) { alert('Error sending link: '+error.message); }
-  else alert('Magic link sent. Check your email.');
-});
-
-document.getElementById('logout-btn').addEventListener('click', async ()=>{
-  await supabase.auth.signOut();
-  document.getElementById('logout-btn').style.display='none';
-  document.getElementById('login-btn').style.display='inline-block';
-});
-
-// refresh
-document.getElementById('refresh').addEventListener('click', loadPostAndAnnotations);
-
-// initial load
-loadPostAndAnnotations();
+// Password hint for user (not security)
+console.log('Homely Annotator loaded. Edit PASSWORD at top of index.html to change shared password.');
 
 </script>
 </body>
