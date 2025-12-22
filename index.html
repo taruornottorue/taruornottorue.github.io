@@ -17,14 +17,13 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--muted);font-fami
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.02)}
 h1{margin:0;font-size:16px}
 .app{display:flex;height:calc(100vh - 64px);gap:16px;padding:16px}
-.col{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);overflow:auto;position:relative}
+.col{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);Padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);overflow:auto;position:relative}
 .left{width:280px;flex-shrink:0}.center{flex:1;min-width:320px}.right{width:320px;flex-shrink:0}
 /* collapsed state: leave only the collapse icon visible and center it */
 .col.collapsed{width:44px !important;padding:6px !important;overflow:visible !important}
 .col.collapsed .panel-body{display:none}
 .col.collapsed .panel-header .title-wrap{display:none}
 .col.collapsed .panel-header{justify-content:center}
-.col.collapsed .panel-header .collapse-icon{display:inline-flex}
 
 .panel-mini{display:none;font-size:16px}
 /* reading list */
@@ -51,12 +50,12 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 /* annotations list styles */
 #annotations-list .ann-group .ann-tabs{margin-bottom:6px}
 /* pw overlay */
-#pw-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.78);z-index:100000}
+#pw-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.92);z-index:100000}
 #pw-box{width:420px;background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));padding:26px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 20px 80px rgba(0,0,0,0.8);text-align:center}
 #pw-box h3{margin:0 0 8px 0;color:var(--muted);font-size:18px}
 #pw-box .pw-note{color:var(--muted-2);font-size:13px;margin-bottom:12px}
 #pw-box input{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);margin-top:6px}
-#pw-submit{width:160px;padding:10px;border-radius:10px;border:none;margin-top:12px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;font-weight:700;cursor:pointer}
+#pw-submit{width:180px;padding:12px;border-radius:10px;border:none;margin-top:12px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;font-weight:700;cursor:pointer}
 
 /* scrollbar (dark theme) */
 /* WebKit */
@@ -117,7 +116,7 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
           <div><strong>Add annotation</strong></div>
           <div class="small" id="selection-preview"></div>
         </div>
-        <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
+        <textarea id="annotation-text" placeholder="write your note"></textarea>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="collapse-btn" id="save-annotation">Save</button>
           <button class="collapse-btn" id="cancel-annotation">Cancel</button>
@@ -151,21 +150,24 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
   - heading 'Password' and short note text
   - removed Guest button; Unlock button centered and larger
   - Enter key on password input triggers unlock
-  - fixed earlier broken newline regex in buildAnnotatedHtml
+  - textarea placeholder changed to "write your note"
+  - fixed annotated-text newline handling
 */
 
 /* CONFIG — edit these */
-const PASSWORD = "password"; // change this
+const PASSWORD = "Stacy"; // change this
 const READINGS_PATH = "readings";   // change if different
 /* Paste your Firebase web config here */
 const FIREBASE_CONFIG = {
-  apiKey: "APIKEY",
-  authDomain: "domain.firebaseapp.com",
-  projectId: "project",
-  storageBucket: "buck.firebasestorage.app",
-  messagingSenderId: "43441918",
-  appId: "1:6471841918:web:1cc68491ee3acaf"
+  apiKey: "AIzaSyCxhiw5V3epzzWeFxlMGQ8SH4QjWDjH_1A",
+  authDomain: "taruornottorue.firebaseapp.com",
+  projectId: "taruornottorue",
+  // OPTIONAL: storageBucket, messagingSenderId, appId...
+  storageBucket: "taruornottorue.firebasestorage.app",
+  messagingSenderId: "458061841918",
+  appId: "1:458061841918:web:1cc68c086bcbf81ee3acaf"
 };
+
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
@@ -271,9 +273,8 @@ function buildAnnotatedHtml(text, anns){
     cursor = g.end;
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
-  out = out.replace(/
-{2,}/g, '</p><p>').replace(/
-/g, '<br>');
+  // FIXED: proper newline handling (was broken by missing \n in regex)
+  out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
   return `<p>${out}</p>`;
 }
 
