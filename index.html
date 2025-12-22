@@ -117,7 +117,7 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
           <div><strong>Add annotation</strong></div>
           <div class="small" id="selection-preview"></div>
         </div>
-        <textarea id="annotation-text" placeholder="Write your note."></textarea>
+        <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="collapse-btn" id="save-annotation">Save</button>
           <button class="collapse-btn" id="cancel-annotation">Cancel</button>
@@ -155,19 +155,17 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 */
 
 /* CONFIG — edit these */
-const PASSWORD = "Stacy"; // change this
+const PASSWORD = "password"; // change this
 const READINGS_PATH = "readings";   // change if different
 /* Paste your Firebase web config here */
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCxhiw5V3epzzWeFxlMGQ8SH4QjWDjH_1A",
-  authDomain: "taruornottorue.firebaseapp.com",
-  projectId: "taruornottorue",
-  // OPTIONAL: storageBucket, messagingSenderId, appId...
-  storageBucket: "taruornottorue.firebasestorage.app",
-  messagingSenderId: "458061841918",
-  appId: "1:458061841918:web:1cc68c086bcbf81ee3acaf"
+  apiKey: "APIKEY",
+  authDomain: "domain.firebaseapp.com",
+  projectId: "project",
+  storageBucket: "buck.firebasestorage.app",
+  messagingSenderId: "43441918",
+  appId: "1:6471841918:web:1cc68491ee3acaf"
 };
-
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
