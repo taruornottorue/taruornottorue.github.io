@@ -108,14 +108,15 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
           <div><strong>Add annotation</strong></div>
           <div class="small" id="selection-preview"></div>
         </div>
-        <textarea id="annotation-text" placeholder="Write your note"></textarea>
+        <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="collapse-btn" id="save-annotation">Save</button>
           <button class="collapse-btn" id="cancel-annotation">Cancel</button>
         </div>
+        <div class="small" style="margin-top:8px;color:var(--muted-2)">Saved locally immediately; Firestore sync happens automatically.</div>
       </div>
 
-      <div id="annotations-list"><div class="small">Select text, create an annotation.</div></div>
+      <div id="annotations-list"><div class="small">Select text to create an annotation.</div></div>
     </div>
   </aside>
 </div>
@@ -124,14 +125,13 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <div id="pw-overlay" style="display:none">
   <div id="pw-box">
-    <h3 style="margin:0 0 6px 0;color:var(--muted)">Password</h3>
-    <div class="small" style="color:var(--muted-2)">I do not know why I did this.</div>
-    <form id="pw-form" onsubmit="event.preventDefault(); document.getElementById('pw-submit').click();">
-     <input id="pw-input" placeholder="Password" autocomplete="off"/>
-     <div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
-      <button class="collapse-btn" id="pw-submit" type="button">Unlock</button>
-     </div>
-    </form>
+    <h3 style="margin:0 0 6px 0;color:var(--muted)">Site password</h3>
+    <div class="small" style="color:var(--muted-2)">Local password stored in page. For stronger protection use Cloudflare Access.</div>
+    <input id="pw-input" placeholder="Password" autocomplete="off"/>
+    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
+      <button class="collapse-btn" id="pw-submit">Unlock</button>
+      <button class="collapse-btn" id="pw-guest">Guest</button>
+    </div>
   </div>
 </div>
 
