@@ -51,7 +51,7 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 /* annotations list styles */
 #annotations-list .ann-group .ann-tabs{margin-bottom:6px}
 /* pw overlay */
-#pw-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.78);z-index:100000}
+#pw-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#000;z-index:100000}
 #pw-box{width:420px;background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));padding:26px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 20px 80px rgba(0,0,0,0.8);text-align:center}
 #pw-box h3{margin:0 0 8px 0;color:var(--muted);font-size:18px}
 #pw-box .pw-note{color:var(--muted-2);font-size:13px;margin-bottom:12px}
@@ -117,15 +117,15 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
           <div><strong>Add annotation</strong></div>
           <div class="small" id="selection-preview"></div>
         </div>
-        <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
+        <textarea id="annotation-text" placeholder="Write your note."></textarea>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="collapse-btn" id="save-annotation">Save</button>
           <button class="collapse-btn" id="cancel-annotation">Cancel</button>
         </div>
-        <div class="small" style="margin-top:8px;color:var(--muted-2)">Saved locally immediately; Firestore sync happens automatically.</div>
+        <div class="small" style="margin-top:8px;color:var(--muted-2)">yadadaya.</div>
       </div>
 
-      <div id="annotations-list"><div class="small">Select text to create an annotation.</div></div>
+      <div id="annotations-list"><div class="small">Select text, create an annotation.</div></div>
     </div>
   </aside>
 </div>
@@ -155,17 +155,19 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 */
 
 /* CONFIG — edit these */
-const PASSWORD = "password"; // change this
+const PASSWORD = "Stacy"; // change this
 const READINGS_PATH = "readings";   // change if different
 /* Paste your Firebase web config here */
 const FIREBASE_CONFIG = {
-  apiKey: "APIKEY",
-  authDomain: "domain.firebaseapp.com",
-  projectId: "project",
-  storageBucket: "buck.firebasestorage.app",
-  messagingSenderId: "43441918",
-  appId: "1:6471841918:web:1cc68491ee3acaf"
+  apiKey: "AIzaSyCxhiw5V3epzzWeFxlMGQ8SH4QjWDjH_1A",
+  authDomain: "taruornottorue.firebaseapp.com",
+  projectId: "taruornottorue",
+  // OPTIONAL: storageBucket, messagingSenderId, appId...
+  storageBucket: "taruornottorue.firebasestorage.app",
+  messagingSenderId: "458061841918",
+  appId: "1:458061841918:web:1cc68c086bcbf81ee3acaf"
 };
+
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
@@ -271,7 +273,9 @@ function buildAnnotatedHtml(text, anns){
     cursor = g.end;
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
-  out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+  out = out.replace(/
+{2,}/g, '</p><p>').replace(/
+/g, '<br>');
   return `<p>${out}</p>`;
 }
 
