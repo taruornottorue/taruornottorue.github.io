@@ -7,15 +7,14 @@
 
 <!-- Markdown renderer -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<!-- Firebase (compat for simplicity) -->
+<!-- Firebase (compat) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
 <style>
 :root{
   --bg:#0f0b08; --panel:#17120f; --muted:#c9b89a; --muted-2:#7b6a58;
-  --accent:#b36b2c; --glass:rgba(255,255,255,0.02); --highlight:rgba(179,107,44,0.18);
-  --radius:12px;
+  --accent:#b36b2c; --glass:rgba(255,255,255,0.02); --highlight:rgba(179,107,44,0.18); --radius:12px;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--muted);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial}
@@ -29,13 +28,13 @@ h1{margin:0;font-size:16px}
 .center{flex:1;min-width:320px}
 .right{width:320px;flex-shrink:0}
 
-/* collapsed display: hide panel content, show two-dash logo only */
+/* collapsed look: only two-dash logo */
 .collapsed{width:44px !important;padding:6px !important;overflow:visible !important}
 .collapsed .panel-content{display:none}
 .collapsed .panel-mini{display:block !important;text-align:center;margin-top:6px;color:var(--muted-2);font-weight:700}
 .panel-mini{display:none;font-size:16px}
 
-/* reading list */
+/* reading items */
 .reading-item{padding:10px;border-radius:8px;background:var(--glass);margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
 .reading-title{font-weight:600}
 .small{font-size:12px;color:var(--muted-2)}
@@ -44,25 +43,24 @@ h1{margin:0;font-size:16px}
 #article{line-height:1.6;color:var(--muted);padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);outline:none}
 .hl{background:var(--highlight);border-radius:4px;padding:0 2px;cursor:pointer}
 
-/* annotations list */
+/* annotations list / tabs */
 .ann-group{margin-bottom:12px;border-radius:8px;padding:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)}
 .ann-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .ann-tab{padding:6px 8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer;font-size:13px;color:var(--muted-2)}
 .ann-active{background:linear-gradient(90deg,var(--accent), #8a5a2a);color:#fff;border:none}
 
-/* annotation editor */
+/* editor */
 .annotation-editor{margin-bottom:12px}
 textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
 
-/* floating fab (Annotate) */
+/* floating annotate button */
 #annot-fab{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
 
-/* password overlay - full black blocking */
+/* pw overlay full black */
 #pw-overlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:#000;color:var(--muted)}
 #pw-box{width:420px;background:#000;padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);box-shadow:0 12px 60px rgba(0,0,0,0.8);text-align:center}
 #pw-box input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);margin-top:10px}
 
-/* responsive */
 @media (max-width:980px){
   .app{flex-direction:column;height:calc(100vh - 88px);padding:10px}
   .left,.right{width:100%;order:2}
@@ -135,11 +133,11 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <button id="annot-fab">Annotate</button>
 
-<!-- full-black overlay -->
+<!-- full-black password overlay -->
 <div id="pw-overlay" style="display:none">
   <div id="pw-box">
     <h3 style="margin:0 0 6px 0;color:var(--muted)">Site password</h3>
-    <div class="small" style="color:var(--muted-2)">This site uses a local password stored in the page. For stronger protection use Cloudflare Access.</div>
+    <div class="small" style="color:var(--muted-2)">Local password stored in page. For stronger protection use Cloudflare Access.</div>
     <input id="pw-input" placeholder="Password" autocomplete="off" />
     <div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
       <button class="collapse-btn" id="pw-submit">Unlock</button>
@@ -149,16 +147,16 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 </div>
 
 <script>
-/* ======================= CONFIG (EDIT THESE) =======================
-  - PASSWORD: client-side overlay password (visible in source)
-  - FIREBASE_CONFIG: paste your web app config from Firebase Console (Project settings -> SDK)
-  - READINGS_PATH: folder where your markdown files are stored (default 'readings')
-=================================================================== */
-const PASSWORD = "buttered-candle"; // <<< REPLACE this with your password
+/* ---------------- CONFIG (EDIT THESE) ----------------
+ - PASSWORD: local overlay password (visible in source)
+ - FIREBASE_CONFIG: paste your web app config from Firebase Console (Project Settings -> SDK)
+ - READINGS_PATH: folder where your markdown files live
+----------------------------------------------------- */
+const PASSWORD = "Stacy"; // <<< REPLACE
 const READINGS_PATH = "readings";
-const AUTODISCOVER = "indexJson"; // keep indexJson recommended
+const AUTODISCOVER = "indexJson";
 
-/* Paste your Firebase config here */
+/* FIREBASE CONFIG - paste your project's config here */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCxhiw5V3epzzWeFxlMGQ8SH4QjWDjH_1A",
   authDomain: "taruornottorue.firebaseapp.com",
@@ -169,11 +167,22 @@ const FIREBASE_CONFIG = {
   appId: "1:458061841918:web:1cc68c086bcbf81ee3acaf"
 };
 
-/* ================= init Firebase ================= */
+
+/* ============== Firebase init ============== */
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 
-/* ----------------- utilities ----------------- */
+// debug helper (manual test)
+window.__testFirestore = async function(){
+  try{
+    const res = await db.collection('__diag').add({ ping:true, t: firebase.firestore.FieldValue.serverTimestamp() });
+    console.log('diag wrote id', res.id);
+    await db.collection('__diag').doc(res.id).delete();
+    console.log('diag deleted');
+  } catch(e){ console.error('diag error', e); alert('diag error: ' + e.message); }
+};
+
+/* -------------- helpers ---------------- */
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 function el(tag, attrs={}, html=''){ const e = document.createElement(tag); Object.assign(e, attrs); if(html) e.innerHTML = html; return e; }
@@ -181,31 +190,28 @@ function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&
 
 /* ---------- state ---------- */
 let readings = [];
-let current = { filePath:null, raw:null, title:null };
-let pendingSelection = null;
+let current = {filePath:null, raw:null, title:null};
+let pendingSelection = null; // {start_idx, end_idx, text}
 let unsubscribeRealtime = null;
 
 /* ---------- password overlay ---------- */
-function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; }catch(e){ return false; } }
-function setUnlocked(){ try{ sessionStorage.setItem('candle_unlocked','1'); }catch(e){} }
-function showOverlay(){ $('#pw-overlay').style.display = 'flex'; document.body.style.overflow = 'hidden'; $('#pw-input').focus(); }
-function hideOverlay(){ $('#pw-overlay').style.display = 'none'; document.body.style.overflow = ''; }
+function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; } catch(e){ return false; } }
+function setUnlocked(){ try{ sessionStorage.setItem('candle_unlocked','1'); } catch(e){} }
+function showOverlay(){ $('#pw-overlay').style.display = 'flex'; document.body.style.overflow='hidden'; $('#pw-input').focus(); }
+function hideOverlay(){ $('#pw-overlay').style.display = 'none'; document.body.style.overflow=''; }
 
 if(!isUnlocked()) showOverlay(); else initApp();
+$('#pw-submit').addEventListener('click', ()=>{ if($('#pw-input').value === PASSWORD){ setUnlocked(); hideOverlay(); initApp(); } else alert('Wrong password'); });
+$('#pw-guest').addEventListener('click', ()=>{ setUnlocked(); hideOverlay(); initApp(); });
 
-$('#pw-submit').addEventListener('click', ()=> {
-  if($('#pw-input').value === PASSWORD){ setUnlocked(); hideOverlay(); initApp(); } else alert('Wrong password');
-});
-$('#pw-guest').addEventListener('click', ()=> { setUnlocked(); hideOverlay(); initApp(); });
-
-/* ---------- readings discovery (index.json) ---------- */
+/* ---------- readings discovery ---------- */
 async function discoverReadings(){
   const indexPath = `/${READINGS_PATH}/index.json`;
   try{
     const r = await fetch(indexPath, {cache:'no-store'});
     if(r.ok){
       const arr = await r.json();
-      readings = arr.map(item => (typeof item==='string') ? {path:item, title:item.split('/').pop()} : {path:item.path, title:item.title||item.path.split('/').pop(), download_url:item.download_url});
+      readings = arr.map(item => (typeof item === 'string') ? {path:item, title:item.split('/').pop()} : {path:item.path, title:item.title||item.path.split('/').pop(), download_url: item.download_url});
       $('#discover-mode').innerText = 'index.json';
       $('#index-json-path').innerText = indexPath;
       renderReadingList();
@@ -216,7 +222,7 @@ async function discoverReadings(){
   $('#index-json-path').innerText = '';
 }
 function renderReadingList(){
-  const cont = $('#reading-list'); cont.innerHTML='';
+  const cont = $('#reading-list'); cont.innerHTML = '';
   readings.forEach(r=>{
     const item = el('div',{className:'reading-item'});
     item.innerHTML = `<div><div class="reading-title">${escapeHtml(r.title)}</div><div class="small">${escapeHtml(r.path.split('/').pop())}</div></div><div class="small">Open</div>`;
@@ -236,7 +242,9 @@ async function loadReading(r){
     if(!res.ok) throw new Error('fetch failed');
     current.raw = await res.text();
     current.title = r.title || r.path.split('/').pop();
-    await renderArticleWithAnnotations();
+    // render using local mirror first (fast)
+    renderArticleWithAnnotations();
+    // subscribe realtime
     subscribeRealtime(current.filePath);
   }catch(e){
     $('#article').innerHTML = `<div class="small">Error loading ${escapeHtml(url)}</div>`;
@@ -246,12 +254,12 @@ async function loadReading(r){
 /* ---------- local storage helpers ---------- */
 const STORAGE_PREFIX = 'candle_annot_';
 function annKeyFor(fp){ return STORAGE_PREFIX + 'anns::' + fp; }
-function loadAnnsLocal(fp){ try{ const s = localStorage.getItem(annKeyFor(fp)); return s ? JSON.parse(s) : []; } catch(e){ return []; } }
+function loadAnnsLocal(fp){ try{ const s = localStorage.getItem(annKeyFor(fp)); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
 function saveAnnsLocal(fp, arr){ localStorage.setItem(annKeyFor(fp), JSON.stringify(arr)); }
 
-/* ---------- build annotated HTML grouped by start/end ---------- */
+/* ---------- html build (group by exact start/end) ---------- */
 function buildAnnotatedHtml(text, anns){
-  anns = (anns||[]).slice().sort((a,b)=> (a.start_idx||a.start) - (b.start_idx||b.start));
+  anns = (anns || []).slice().sort((a,b)=> (a.start_idx||a.start) - (b.start_idx||b.start));
   const groups = [];
   for(const a of anns){
     const start = a.start_idx ?? a.start;
@@ -273,16 +281,15 @@ function buildAnnotatedHtml(text, anns){
   return `<p>${out}</p>`;
 }
 
-/* ---------- render article + annotations ---------- */
-async function renderArticleWithAnnotations(){
+/* ---------- render article + annotation list ---------- */
+function renderArticleWithAnnotations(){
   const raw = current.raw || '';
-  // try Firestore local mirror or fallback; we rely on real-time updates to keep it fresh.
   const anns = loadAnnsLocal(current.filePath);
   $('#article').innerHTML = buildAnnotatedHtml(raw, anns);
   renderAnnGroups(anns);
 }
 
-/* ---------- render groups in right panel (tabs for duplicates) ---------- */
+/* ---------- render groups in right panel ---------- */
 function renderAnnGroups(anns){
   const cont = $('#annotations-list'); cont.innerHTML = '';
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
@@ -296,29 +303,28 @@ function renderAnnGroups(anns){
     if(last && last.start === start && last.end === end) last.items.push(a);
     else groups.push({ start, end, items: [a] });
   }
-
-  groups.forEach(g => {
+  groups.forEach(g=>{
     const excerpt = current.raw.slice(g.start, g.end);
     const groupEl = el('div',{className:'ann-group'});
     groupEl.appendChild(el('div',{}, `<div class="small" style="margin-bottom:8px"><em>Excerpt:</em> "${escapeHtml(excerpt.slice(0,200))}${excerpt.length>200?'…':''}"</div>`));
     const tabs = el('div',{className:'ann-tabs'});
-    g.items.forEach((it, idx) => {
+    g.items.forEach((it, idx)=>{
       const tab = el('button',{className:'ann-tab'}, `#${it.id} — ${escapeHtml((it.author||'You').slice(0,12))}`);
       if(idx===0) tab.classList.add('ann-active');
       tab.addEventListener('click', ()=> {
         tabs.querySelectorAll('.ann-tab').forEach(t=>t.classList.remove('ann-active'));
         tab.classList.add('ann-active');
-        body.innerHTML = `${marked.parseInline(it.note||'')}<div class="small" style="margin-top:8px;color:var(--muted-2)">${new Date(it.created_at||it.createdAt||'').toLocaleString()}</div><div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${it.id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${it.id}" data-action="edit">Edit</button><button class="collapse-btn" data-id="${it.id}" data-action="delete">Delete</button></div>`;
+        body.innerHTML = `${marked.parseInline(it.note||'')}<div class="small" style="margin-top:8px;color:var(--muted-2)">${new Date(it.created_at?.toDate ? it.created_at.toDate().toISOString() : (it.created_at || it.createdAt || '')).toLocaleString()}</div><div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${it.id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${it.id}" data-action="edit">Edit</button><button class="collapse-btn" data-id="${it.id}" data-action="delete">Delete</button></div>`;
       });
       tabs.appendChild(tab);
     });
     groupEl.appendChild(tabs);
-    const body = el('div',{}, `${marked.parseInline(g.items[0].note||'')}<div class="small" style="margin-top:8px;color:var(--muted-2)">${new Date(g.items[0].created_at||g.items[0].createdAt||'').toLocaleString()}</div><div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button><button class="collapse-btn" data-id="${g.items[0].id}" data-action="delete">Delete</button></div>`);
+    const body = el('div',{}, `${marked.parseInline(g.items[0].note||'')}<div class="small" style="margin-top:8px;color:var(--muted-2)">${new Date(g.items[0].created_at?.toDate ? g.items[0].created_at.toDate().toISOString() : (g.items[0].created_at || g.items[0].createdAt || '')).toLocaleString()}</div><div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button><button class="collapse-btn" data-id="${g.items[0].id}" data-action="delete">Delete</button></div>`);
     groupEl.appendChild(body);
     cont.appendChild(groupEl);
   });
 
-  // handlers
+  // action handlers
   cont.querySelectorAll('[data-action]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
@@ -330,10 +336,9 @@ function renderAnnGroups(anns){
         if(sp){ sp.scrollIntoView({behavior:'smooth', block:'center'}); sp.animate([{boxShadow:'0 0 0 rgba(0,0,0,0)'},{boxShadow:'0 10px 40px rgba(179,107,44,0.22)'}],{duration:900}); }
       } else if(action === 'delete'){
         if(!confirm('Delete annotation?')) return;
-        try {
-          // delete from Firestore if it exists there
+        try{
           if(ann._remoteId) await db.collection('annotations').doc(ann._remoteId).delete();
-        } catch(e){ console.warn('remote delete failed', e); }
+        }catch(e){ console.warn('remote delete failed', e); }
         const filtered = anns.filter(a=> String(a.id) !== String(id));
         saveAnnsLocal(current.filePath, filtered);
         renderArticleWithAnnotations();
@@ -348,82 +353,68 @@ function renderAnnGroups(anns){
   });
 }
 
-/* ---------- selection -> best occurrence mapping ---------- */
-/* Find all indices of needle in haystack */
+/* ---------- selection matching helpers ---------- */
 function findAllIndices(haystack, needle){
-  const res = [];
+  const res = []; if(!needle) return res;
   let pos = 0;
   while(true){
     const idx = haystack.indexOf(needle, pos);
     if(idx === -1) break;
     res.push(idx);
-    pos = idx + needle.length;
+    pos = idx + Math.max(1, needle.length);
   }
   return res;
 }
 
-/* Given char index + length, produce a DOM Range in #article mapped to those char offsets */
+/* map char index to DOM Range under #article (used only for rect calculations) */
 function domRangeForCharIndex(container, charIndex, length){
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
   let node;
   let chars = 0;
   while(node = walker.nextNode()){
-    const nextChars = chars + node.textContent.length;
-    if(charIndex < nextChars){
-      // start is in this node
-      const startOffset = charIndex - chars;
+    const next = chars + node.textContent.length;
+    if(charIndex < next){
+      const startOffset = Math.max(0, charIndex - chars);
       const range = document.createRange();
       range.setStart(node, startOffset);
       // compute end
       let remaining = length;
-      let endNode = node, endOffset = startOffset;
-      let tempWalker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
-      // walk until we find end node (we'll re-walk from first node to be safe)
-      let foundStart = false;
-      while((n = tempWalker.nextNode())){
-        if(!foundStart){
-          if(n === node) foundStart = true;
-          else continue;
-        } else {
-          const chunk = n.textContent.length - (n === node ? startOffset : 0);
-        }
+      let n2 = node;
+      let off = startOffset;
+      if(remaining <= node.textContent.length - startOffset){
+        range.setEnd(node, startOffset + remaining);
+        return range;
       }
-      // simpler: iterate forward from current node using another walker
+      remaining -= (node.textContent.length - startOffset);
+      // walk forward
       const fw = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
-      let started = false;
-      let acc = 0;
-      while((n2 = fw.nextNode())){
-        if(!started){
-          if(n2 === node){ started = true; acc = n2.textContent.length - startOffset; if(remaining <= acc){ endNode = n2; endOffset = startOffset + length; break; } remaining -= (n2.textContent.length - startOffset); }
-          else continue;
-        } else {
-          if(remaining <= n2.textContent.length){ endNode = n2; endOffset = remaining; break; }
-          remaining -= n2.textContent.length;
+      // move fw to current node
+      while((nv = fw.nextNode())){
+        if(nv === node) break;
+      }
+      while((nv = fw.nextNode())){
+        if(remaining <= nv.textContent.length){
+          range.setEnd(nv, remaining);
+          return range;
         }
+        remaining -= nv.textContent.length;
       }
-      if(!started){ return null; }
-      // if endNode not set, end at end of last node
-      try{
-        range.setEnd(endNode, endOffset);
-      }catch(e){
-        // fallback: set end at same node end
-        range.setEnd(node, node.textContent.length);
-      }
+      // fallback
+      range.setEnd(node, node.textContent.length);
       return range;
     }
-    chars = nextChars;
+    chars = next;
   }
   return null;
 }
 
-/* compute distance between two rect centers */
 function rectDistance(a,b){
   const ax = a.left + a.width/2, ay = a.top + a.height/2;
   const bx = b.left + b.width/2, by = b.top + b.height/2;
   return Math.hypot(ax-bx, ay-by);
 }
 
-/* On selectionchange, compute best occurrence and show FAB */
+/* ---------- FAB & selection handling (robust) ---------- */
 const articleEl = document.getElementById('article');
 const annotFab = document.getElementById('annot-fab');
 
@@ -433,49 +424,72 @@ function showFabAtRect(rect){
   const scrollY = window.scrollY || window.pageYOffset;
   const left = Math.max(8, rect.left + (rect.width/2) - 40);
   const top = rect.top + scrollY - 44;
-  annotFab.style.left = left + 'px';
-  annotFab.style.top = top + 'px';
-  annotFab.style.display = 'block';
+  annotFab.style.left = left + 'px'; annotFab.style.top = top + 'px'; annotFab.style.display = 'block';
 }
+
+/* The selection logic:
+ - On selectionchange compute candidates and show FAB.
+ - But when the FAB is activated we capture selection via pointerdown (before focus loss),
+   compute best occurrence and store pendingSelection (so focusing editor won't clear it).
+ - Also, selectionchange will not clear pendingSelection if editor is open.
+*/
 
 document.addEventListener('selectionchange', ()=>{
   const sel = window.getSelection();
-  if(!sel || sel.rangeCount === 0){ pendingSelection = null; hideFab(); return; }
+  const editorOpen = document.getElementById('annotation-editor').style.display === 'block';
+  if(!sel || sel.rangeCount === 0){
+    if(editorOpen) return; pendingSelection = null; hideFab(); return;
+  }
   const text = sel.toString();
-  if(!text || !current.raw){ pendingSelection = null; hideFab(); return; }
-  // find all indices of text in current.raw
+  if(!text || !current.raw){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
+  // find candidate indices
   const indices = findAllIndices(current.raw, text);
-  if(indices.length === 0){ pendingSelection = null; hideFab(); return; }
-  // get visual rect of actual selection
+  if(indices.length === 0){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
   const selRect = sel.getRangeAt(0).getBoundingClientRect();
-  // find the DOM range for each candidate and choose the one with smallest rect distance
   let best = null; let bestDist = Infinity;
   for(const idx of indices){
     const range = domRangeForCharIndex(articleEl, idx, text.length);
     if(!range) continue;
     const r = range.getBoundingClientRect();
-    if(!r || (r.width === 0 && r.height ===0)) continue;
+    if(!r || (r.width===0 && r.height===0)) continue;
     const d = rectDistance(selRect, r);
     if(d < bestDist){ bestDist = d; best = { index: idx, range, rect: r }; }
   }
-  if(!best){ pendingSelection = null; hideFab(); return; }
-  // store selection info relative to raw
+  if(!best){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
+  // set ephemeral pendingSelection (this will be solidified on pointerdown on FAB)
   pendingSelection = { start_idx: best.index, end_idx: best.index + text.length, text };
-  // show fab near selection (mobile: fixed bottom)
   if(window.innerWidth < 980){
-    annotFab.style.position = 'fixed';
-    annotFab.style.right = '14px';
-    annotFab.style.bottom = '110px';
-    annotFab.style.left = '';
-    annotFab.style.top = '';
-    annotFab.style.display = 'block';
+    annotFab.style.position='fixed'; annotFab.style.right='14px'; annotFab.style.bottom='110px'; annotFab.style.left=''; annotFab.style.top=''; annotFab.style.display='block';
   } else {
-    annotFab.style.position = 'absolute';
-    showFabAtRect(best.rect);
+    annotFab.style.position='absolute'; showFabAtRect(best.rect);
   }
 });
 
-/* clicking fab opens editor in right panel */
+// Important: capture selection before FAB click steals focus
+annotFab.addEventListener('pointerdown', (ev)=>{
+  // Try to recompute precise selection & store it (pointerdown happens before blur)
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount===0) return;
+  const text = sel.toString();
+  if(!text || !current.raw) return;
+  // compute best occurrence as above
+  const indices = findAllIndices(current.raw, text);
+  if(indices.length === 0) return;
+  const selRect = sel.getRangeAt(0).getBoundingClientRect();
+  let best = null; let bestDist = Infinity;
+  for(const idx of indices){
+    const range = domRangeForCharIndex(articleEl, idx, text.length);
+    if(!range) continue;
+    const r = range.getBoundingClientRect();
+    const d = rectDistance(selRect, r);
+    if(d < bestDist){ bestDist = d; best = { index: idx, rect: r }; }
+  }
+  if(best){
+    pendingSelection = { start_idx: best.index, end_idx: best.index + text.length, text };
+  }
+});
+
+// click opens editor (selection already captured)
 annotFab.addEventListener('click', ()=>{
   if(!pendingSelection) return alert('No selection.');
   $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,120)}${pendingSelection.text.length>120?'…':''}"`;
@@ -487,15 +501,43 @@ annotFab.addEventListener('click', ()=>{
   hideFab();
 });
 
-/* hide fab when click elsewhere */
+/* hide fab when clicking outside and no selection */
 document.addEventListener('mousedown', (e)=>{
   if(e.target === annotFab || annotFab.contains(e.target)) return;
   const sel = window.getSelection();
   if(!sel || sel.toString().trim()==='') hideFab();
 });
 
-/* ---------- save annotation (to local and Firestore) ---------- */
-$('#cancel-annotation').addEventListener('click', ()=> {
+/* ---------- Firestore write helper (matches restrictive rules exactly) ---------- */
+async function pushAnnotationToFirestore(payload){
+  /* payload should contain:
+     file (string),
+     start_idx (int),
+     end_idx (int),
+     text (string),
+     note (string),
+     author (string)
+  */
+  try{
+    const doc = {
+      file: payload.file,
+      start_idx: Number(payload.start_idx),
+      end_idx: Number(payload.end_idx),
+      text: payload.text || "",
+      note: payload.note || "",
+      author: payload.author || "Annotator",
+      created_at: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const ref = await db.collection('annotations').add(doc);
+    return { ok:true, id: ref.id };
+  } catch(e){
+    console.error('pushAnnotationToFirestore error', e);
+    return { ok:false, error: e };
+  }
+}
+
+/* ---------- Save annotation (handles local + remote) ---------- */
+$('#cancel-annotation').addEventListener('click', ()=>{
   pendingSelection = null; $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = ''; window.getSelection().removeAllRanges(); hideFab();
 });
 
@@ -503,80 +545,76 @@ $('#save-annotation').addEventListener('click', async ()=>{
   if(!current.filePath) return alert('Open a reading first.');
   const note = $('#annotation-text').value.trim(); if(!note) return alert('Write a note.');
   const editingId = $('#annotation-editor').dataset.editing;
-  const now = new Date().toISOString();
+  const nowISO = new Date().toISOString();
   let anns = loadAnnsLocal(current.filePath) || [];
 
   if(editingId){
-    // edit existing (local + remote if possible)
     const idx = anns.findIndex(a=> String(a.id) === String(editingId));
     if(idx === -1) return alert('Annotation not found.');
-    anns[idx].note = note; anns[idx].edited_at = now;
+    anns[idx].note = note; anns[idx].edited_at = nowISO;
     saveAnnsLocal(current.filePath, anns); renderArticleWithAnnotations();
-    // try to update remote if _remoteId present
+    // If remote id present, update remote note (no rule allows update, but we try if rules changed)
     try{
       const remoteId = anns[idx]._remoteId;
-      if(remoteId) await db.collection('annotations').doc(remoteId).update({ note, edited_at: now });
+      if(remoteId) await db.collection('annotations').doc(remoteId).update({ note, edited_at: nowISO });
     }catch(e){ console.warn('remote edit failed', e); }
   } else {
     if(!pendingSelection) return alert('Select text first.');
     const newAnn = {
       id: String(Date.now()) + '-' + Math.floor(Math.random()*9999),
       file: current.filePath,
-      start_idx: pendingSelection.start_idx,
-      end_idx: pendingSelection.end_idx,
+      start_idx: Math.floor(pendingSelection.start_idx),
+      end_idx: Math.floor(pendingSelection.end_idx),
       text: pendingSelection.text,
       note,
       author: localStorage.getItem('candle_author') || 'Annotator',
-      created_at: now
+      created_at: nowISO
     };
-    // optimistic local insert
+    // optimistic local store
     anns.push(newAnn); saveAnnsLocal(current.filePath, anns); renderArticleWithAnnotations();
-    // write to Firestore
-    try{
-      const docRef = await db.collection('annotations').add(newAnn);
-      // attach remote id to local copy for later edits/deletes
-      const local = loadAnnsLocal(current.filePath);
-      const locIdx = local.findIndex(a => a.id === newAnn.id);
-      if(locIdx !== -1){ local[locIdx]._remoteId = docRef.id; saveAnnsLocal(current.filePath, local); renderArticleWithAnnotations(); }
-    }catch(err){
-      console.error('Firestore write failed', err);
-      // leave local copy; user can export later
+
+    // push to Firestore with exact fields required by rules
+    const res = await pushAnnotationToFirestore(newAnn);
+    if(!res.ok){
+      console.warn('Firestore write failed', res.error);
       alert('Firestore write failed; saved locally.');
+    } else {
+      // attach remote id to local entry for future edits/deletes
+      const loc = loadAnnsLocal(current.filePath);
+      const li = loc.find(a=> a.id === newAnn.id);
+      if(li){ li._remoteId = res.id; saveAnnsLocal(current.filePath, loc); renderArticleWithAnnotations(); }
     }
   }
 
   $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = ''; pendingSelection = null; window.getSelection().removeAllRanges(); hideFab();
 });
 
-/* ---------- realtime subscription for current file ---------- */
+/* ---------- subscribe realtime (onSnapshot) ---------- */
 function subscribeRealtime(filePath){
-  if(unsubscribeRealtime) { try{ unsubscribeRealtime(); }catch(e){} unsubscribeRealtime = null; }
+  if(unsubscribeRealtime) { try{ unsubscribeRealtime(); } catch(e){} unsubscribeRealtime = null; }
   try{
-    unsubscribeRealtime = db.collection('annotations').where('file', '==', filePath).orderBy('created_at')
-      .onSnapshot(snapshot => {
-        const anns = [];
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          d._remoteId = doc.id;
-          // normalize keys for local compatibility
-          d.id = d.id || String(Date.now()) + '-' + Math.floor(Math.random()*9999); // if doc didn't include id originally
-          anns.push(d);
-        });
-        // sort by created_at (string or timestamp)
-        anns.sort((a,b)=> {
-          const ta = (a.created_at && a.created_at.toDate) ? a.created_at.toDate().toISOString() : (a.created_at || a.createdAt || a.created_at);
-          const tb = (b.created_at && b.created_at.toDate) ? b.created_at.toDate().toISOString() : (b.created_at || b.createdAt || b.created_at);
-          return (ta||'').localeCompare(tb||'');
-        });
-        saveAnnsLocal(filePath, anns);
-        renderArticleWithAnnotations();
-      }, err => {
-        console.warn('onSnapshot error', err);
+    unsubscribeRealtime = db.collection('annotations').where('file','==', filePath).orderBy('created_at').onSnapshot(snapshot=>{
+      const anns = [];
+      snapshot.forEach(doc=>{
+        const d = doc.data();
+        d._remoteId = doc.id;
+        // keep client id if present, else set doc id
+        d.id = d.id || doc.id;
+        anns.push(d);
       });
+      // sort by created_at (server Timestamp -> toDate)
+      anns.sort((a,b)=>{
+        const ta = a.created_at?.toDate ? a.created_at.toDate().toISOString() : (a.created_at || a.createdAt || '');
+        const tb = b.created_at?.toDate ? b.created_at.toDate().toISOString() : (b.created_at || b.createdAt || '');
+        return (ta||'').localeCompare(tb||'');
+      });
+      saveAnnsLocal(filePath, anns);
+      renderArticleWithAnnotations();
+    }, err => { console.warn('onSnapshot error', err); });
   }catch(e){ console.warn('subscribe error', e); }
 }
 
-/* ---------- highlight click -> open right panel to group ---------- */
+/* ---------- highlight click -> open right panel ---------- */
 document.addEventListener('click', (ev)=>{
   const t = ev.target;
   if(t && t.matches && t.matches('.hl')){
@@ -584,11 +622,9 @@ document.addEventListener('click', (ev)=>{
     if(isNaN(start) || isNaN(end)) return;
     $('#right-col').classList.remove('collapsed');
     document.getElementById('right-col').scrollTop = 0;
-    // show groups (will scroll to the one containing matching excerpt)
     const anns = loadAnnsLocal(current.filePath) || [];
     renderAnnGroups(anns);
     setTimeout(()=>{
-      // try to find the ann-group that includes this excerpt by matching substring snippet
       const snippet = current.raw.slice(start, Math.min(end, start+60)).trim().slice(0,40);
       const groups = Array.from(document.querySelectorAll('#annotations-list .ann-group'));
       for(const g of groups){
@@ -602,7 +638,7 @@ document.addEventListener('click', (ev)=>{
   }
 });
 
-/* ---------- Export / Clear ---------- */
+/* ---------- export & clear ---------- */
 $('#export-annotations').addEventListener('click', ()=>{
   if(!current.filePath) return alert('Open a file first.');
   const anns = loadAnnsLocal(current.filePath) || [];
