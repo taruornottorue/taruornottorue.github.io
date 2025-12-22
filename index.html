@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Read & Annotate — Candle (Firestore, debug-friendly)</title>
+<title>Readings</title>
 
 <!-- markdown renderer + firebase -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -42,7 +42,7 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 <body>
 
 <header>
-  <div style="display:flex;gap:12px;align-items:center"><h1>Read & Annotate — Candle</h1><div class="small">single annotator mode</div></div>
+  <div style="display:flex;gap:12px;align-items:center"><h1>Readings</h1><div class="small">(and also annotating if you wish to)</div></div>
   <div style="display:flex;gap:8px;align-items:center">
     <div id="sync-status" class="small sync-indicator">sync: init</div>
     <button class="collapse-btn" id="collapse-left" title="Toggle left">≡</button>
@@ -55,13 +55,10 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
     <div class="panel-mini">--</div>
     <div class="panel-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div><div class="small">Readings</div><strong style="font-size:15px">Your files</strong></div>
-        <div class="small" id="discover-mode">local</div>
+        <div><div class="small">Primarily just short stories</div><strong style="font-size:15px">Readings</strong></div>
       </div>
       <div id="reading-list"><div class="small">Loading…</div></div>
       <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0" />
-      <div><div class="small">Index file</div><div class="small" id="index-json-path" style="margin-top:6px;color:var(--muted-2)"></div></div>
-      <div class="debug" id="debug-block"></div>
     </div>
   </aside>
 
