@@ -3,137 +3,94 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Read & Annotate — Candle (Supabase)</title>
+<title>Read & Annotate — Supabase-backed (fixed)</title>
 
-<!-- marked for inline markdown rendering -->
+<!-- marked (markdown parser) -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<!-- supabase client (UMD) -->
+<!-- supabase-js (may be blocked in some environments; we guard for that) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 
 <style>
+/* (kept your original styles) */
 :root{
   --bg:#0f0b08; --panel:#17120f; --muted:#c9b89a; --muted-2:#7b6a58; --accent:#b36b2c; --glass:rgba(255,255,255,0.02); --highlight:rgba(179,107,44,0.18); --radius:10px;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--muted);font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.02);}
 .app{display:flex;height:calc(100vh - 64px);gap:16px;padding:16px;}
-.col{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);overflow:auto;position:relative;}
+.col{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);overflow:auto;}
 .left{width:280px;flex-shrink:0}
 .center{flex:1;min-width:360px}
-.right{width:360px;flex-shrink:0}
-
-/* collapsed behavior: keep only mini-logo visible and hide rest */
-.col .col-content { display:block; }
-.col .mini-logo { display:none; align-items:center; justify-content:center; height:44px; font-weight:700; font-size:18px; color:var(--muted-2); }
-.col.collapsed .col-content { display:none !important; }
-.col.collapsed .mini-logo { display:flex !important; }
-
-/* collapsed small width */
-.collapsed { width:44px !important; padding:6px !important; }
-
-/* small controls */
-.collapse-btn { width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.03); background:transparent;color:var(--muted);cursor:pointer; display:inline-flex;align-items:center;justify-content:center; }
+.right{width:320px;flex-shrink:0}
+.collapsed { width:44px !important; padding:8px !important; overflow:visible !important; }
+.collapse-btn { width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.03); background:transparent;color:var(--muted);cursor:pointer; }
 .reading-item{padding:10px;border-radius:8px;background:var(--glass);margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
-.reading-title{font-weight:600}
 .small{font-size:12px;color:var(--muted-2)}
 #article{line-height:1.6;color:var(--muted);padding:6px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);}
 .hl{background:var(--highlight);border-radius:4px;padding:0 2px;cursor:pointer;}
 .note-bubble{font-size:12px;color:var(--muted-2);margin-top:6px;padding:8px;background:rgba(255,255,255,0.01);border-radius:8px;border:1px dashed rgba(255,255,255,0.02);}
-
-/* annotation editor lives in right column now */
-.annotation-editor{margin-top:12px}
-textarea{width:100%;min-height:120px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);}
-
-/* annotate floating button */
-#annotate-btn{position:fixed;z-index:999999;border-radius:10px;padding:8px 10px;background:var(--accent);color:#000;font-weight:700;cursor:pointer;display:none;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
-
-/* full-black password overlay */
+textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);}
 #pw-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#000;color:var(--muted);}
-#pw-box{width:420px;background:#000;padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);box-shadow:0 12px 60px rgba(0,0,0,0.8);text-align:center}
+/* make overlay visible by default in case JS crashes — JS still toggles it later */
+#pw-overlay[data-default-visible="1"]{ display:flex; }
+#pw-box{width:420px;background:#000;padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);text-align:center}
 #pw-box input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);margin-top:10px}
-
-/* responsive */
-@media (max-width:980px){
-  .app{flex-direction:column;height:calc(100vh - 88px)}
-  .left,.right{width:100%;order:2}
-  .center{order:1}
-  .right{width:100%}
-}
+@media (max-width:980px){ .app{flex-direction:column;height:calc(100vh - 88px)} .left,.right{width:100%;order:2} .center{order:1} }
 </style>
 </head>
 <body>
 
 <header>
-  <div style="display:flex;gap:12px;align-items:center">
-    <h1 style="margin:0;font-size:16px">Read & Annotate — Candle</h1>
-    <div class="small">Supabase realtime</div>
-  </div>
+  <div style="display:flex;gap:12px;align-items:center"><h1 style="margin:0;font-size:16px">Read & Annotate</h1><div class="small">Supabase-backed — realtime</div></div>
   <div style="display:flex;gap:8px;align-items:center">
-    <button class="collapse-btn" id="collapse-left" title="Toggle readings panel">≡</button>
-    <button class="collapse-btn" id="collapse-right" title="Toggle annotations panel">☰</button>
-    <button class="collapse-btn" id="export-annotations" title="Export JSON">↓</button>
+    <button class="collapse-btn" id="collapse-left">≡</button>
+    <button class="collapse-btn" id="collapse-right">☰</button>
+    <button class="collapse-btn" id="clear-local">✕</button>
   </div>
 </header>
 
 <div class="app">
-  <!-- left -->
   <aside class="col left" id="left-col">
-    <div class="mini-logo">— —</div>
-    <div class="col-content">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div><div class="small">Readings</div><strong style="font-size:15px">Your files</strong></div>
-        <div class="small" id="discover-mode">local</div>
-      </div>
-      <div id="reading-list"><div class="small">Loading…</div></div>
-      <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0" />
-      <div><div class="small">Index file</div><div class="small" id="index-json-path" style="margin-top:6px;color:var(--muted-2)"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><div class="small">Readings</div><strong style="font-size:15px">Your files</strong></div>
+      <div class="small" id="discover-mode">local</div>
     </div>
+    <div id="reading-list"><div class="small">Loading…</div></div>
+    <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0" />
+    <div><div class="small">Index file</div><div class="small" id="index-json-path" style="margin-top:6px;color:var(--muted-2)"></div></div>
   </aside>
 
-  <!-- center -->
   <main class="col center">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div><div class="small">Viewing</div><h2 id="post-title" style="margin:4px 0 0 0">Nothing loaded</h2></div>
       <div style="text-align:right"><div class="small">File</div><div id="current-file" class="small">—</div></div>
     </div>
 
-    <div id="article" tabindex="0" aria-label="Article content">Open a reading from the left.</div>
+    <div id="article" tabindex="0">Open a reading from the left.</div>
+
+    <div id="annotation-editor" style="display:none;margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div><strong>Add annotation</strong></div><div class="small" id="selection-preview"></div></div>
+      <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="collapse-btn" id="save-annotation">Save</button>
+        <button class="collapse-btn" id="cancel-annotation">Cancel</button>
+      </div>
+      <div class="small" style="margin-top:8px;color:var(--muted-2)">Annotations saved to database and pushed via realtime.</div>
+    </div>
   </main>
 
-  <!-- right -->
   <aside class="col right" id="right-col">
-    <div class="mini-logo">— —</div>
-    <div class="col-content">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div><div class="small">Annotations</div><strong style="font-size:15px">All notes</strong></div>
-        <div style="display:flex;gap:6px"><div id="sync-status" class="small">—</div></div>
-      </div>
-
-      <!-- annotation editor (shows when selecting or clicking annotate) -->
-      <div class="annotation-editor" id="annotation-editor" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong id="editor-heading">Add annotation</strong></div>
-          <div class="small" id="selection-preview"></div>
-        </div>
-        <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="collapse-btn" id="save-annotation">Save</button>
-          <button class="collapse-btn" id="cancel-annotation">Cancel</button>
-        </div>
-        <div class="small" style="margin-top:8px;color:var(--muted-2)">Saved to Supabase and shown realtime to other viewers.</div>
-      </div>
-
-      <div id="annotations-list" style="margin-top:12px"><div class="small">Select text to create an annotation.</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><div class="small">Annotations</div><strong style="font-size:15px">All notes</strong></div>
+      <div style="display:flex;gap:6px"><div id="sync-status" class="small">—</div></div>
     </div>
+    <div id="annotations-list"><div class="small">Select text to create an annotation.</div></div>
   </aside>
 </div>
 
-<!-- annotate floating button -->
-<button id="annotate-btn">Annotate</button>
-
-<!-- Password overlay -->
-<div id="pw-overlay" style="display:none">
+<!-- Password overlay: default hidden, but we add an attribute to show by default during debugging if needed -->
+<div id="pw-overlay" style="display:none" data-default-visible="0">
   <div id="pw-box">
     <h3 style="margin:0 0 6px 0;color:var(--muted)">Site password</h3>
     <div class="small" style="color:var(--muted-2)">This is local client-side gating (not server enforced).</div>
@@ -146,54 +103,105 @@ textarea{width:100%;min-height:120px;border-radius:8px;padding:8px;background:tr
 </div>
 
 <script>
-/* ============ CONFIG: replace with your project values ============ */
-const PASSWORD = "buttered-candle";
+/* ============ CONFIG ============ */
+const PASSWORD = "buttered-candle"; // change as you wish
 const READINGS_PATH = "readings";
+const AUTODISCOVER = "indexJson"; // keep index.json approach
+// --- SUPABASE: replace with your project values ---
 const SUPABASE_URL = "https://wtpmnawyjzthkrwjpmyv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cG1uYXd5anp0aGtyd2pwbXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNTk4ODQsImV4cCI6MjA4MTkzNTg4NH0.ezh7Ai8oWQL9NiJtdMRQjjbA_MGgb66tdpbFH7ut7Ms";
-/* ================================================================= */
+/* ================================= */
 
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+/* small helpers */
 const $ = s => document.querySelector(s);
-const el = (t, a={}, h='') => { const e=document.createElement(t); Object.assign(e,a); if(h) e.innerHTML=h; return e; };
+function el(tag, attrs={}, html=''){ const e=document.createElement(tag); Object.assign(e, attrs); if(html) e.innerHTML = html; return e; }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
+/* state */
 let readings = [];
 let current = { filePath:null, raw:null, title:null };
-let pendingSelection = null; // {start_idx,end_idx,text}
-let realtimeSub = null;
+let pendingSelection = null;
+let supabase = null; // we'll set this later inside initApp (guarded)
+let realtimeSubscription = null;
 
-/* password gating */
-function isUnlocked(){ try { return sessionStorage.getItem('candle_unlocked') === '1'; } catch(e){ return false; } }
-function setUnlocked(){ try { sessionStorage.setItem('candle_unlocked', '1'); } catch(e){} }
-if(!isUnlocked()) $('#pw-overlay').style.display = 'flex';
-else initApp();
-$('#pw-submit').addEventListener('click', ()=>{ if($('#pw-input').value === PASSWORD){ setUnlocked(); $('#pw-overlay').style.display='none'; initApp(); } else alert('Wrong password'); });
-$('#pw-guest').addEventListener('click', ()=>{ setUnlocked(); $('#pw-overlay').style.display='none'; initApp(); });
+/* global error handler to surface problems */
+window.onerror = function(msg, src, line, col, err){
+  console.error('Uncaught error', msg, src, line, col, err);
+  // show a visible notice in the reading-list so user sees something
+  const rl = $('#reading-list');
+  if(rl) rl.innerHTML = `<div class="small" style="color:tomato">JS error: ${String(msg).slice(0,120)} — check console</div>`;
+};
 
-/* mini helpers for local mirror */
-const storageKey = p => 'candle_local::' + p;
+/* password gating (show overlay BEFORE any risky initialization) */
+function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; }catch(e){return false;} }
+function setUnlocked(){ try{ sessionStorage.setItem('candle_unlocked','1'); }catch(e){} }
 
-/* ---------- discover readings via index.json (preferred) ---------- */
-async function discoverReadings(){
-  const indexPath = `/${READINGS_PATH}/index.json`;
-  try {
-    const r = await fetch(indexPath, { cache:'no-store' });
-    if(r.ok){
-      const arr = await r.json();
-      readings = arr.map(i => (typeof i === 'string') ? { path:i, title:i.split('/').pop() } : { path:i.path, title:i.title || i.path.split('/').pop(), download_url: i.download_url });
-      $('#discover-mode').innerText = 'index.json';
-      $('#index-json-path').innerText = indexPath;
-      renderReadingList();
-      return;
-    }
-  } catch(e){}
-  $('#reading-list').innerHTML = '<div class="small">No readings found. Add /readings/index.json</div>';
-  $('#index-json-path').innerText = '';
+/* show overlay right away if user not unlocked */
+try {
+  if(!isUnlocked()){
+    $('#pw-overlay').style.display = 'flex';
+  } else {
+    // we will call initApp() below *after* we create supabase safely
+  }
+} catch(e){
+  console.warn('Error when toggling overlay', e);
+  document.getElementById('pw-overlay').style.display = 'flex';
 }
 
-/* render left list */
+/* overlay events (these will call initApp safely) */
+$('#pw-submit').addEventListener('click', ()=>{
+  if($('#pw-input').value === PASSWORD){ setUnlocked(); $('#pw-overlay').style.display='none'; initApp(); } else alert('Wrong password'); 
+});
+$('#pw-guest').addEventListener('click', ()=>{ setUnlocked(); $('#pw-overlay').style.display='none'; initApp(); });
+
+/* ---------- move risky supabase init inside initApp and guard it ---------- */
+async function initApp(){
+  // Create supabase client in a try/catch — if it fails, we keep running in local-only mode
+  try{
+    if(typeof supabaseJs === 'undefined') throw new Error('supabaseJs missing (CDN failed or blocked)');
+    supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase client created');
+  }catch(err){
+    console.error('Supabase init failed:', err);
+    const rl = $('#reading-list');
+    if(rl) rl.innerHTML = `<div class="small" style="color:tomato">Supabase unavailable — running in local mode. Check console for details.</div>`;
+    // keep supabase null; functions using it should handle that gracefully
+    supabase = null;
+  }
+
+  // proceed to discover readings and show UI
+  await discoverReadings();
+  if(readings.length) loadReading(readings[0]);
+  else $('#article').innerHTML = '<div class="small">No readings found — add /readings/index.json</div>';
+  if(!localStorage.getItem('candle_author')) localStorage.setItem('candle_author','Annotator');
+}
+
+/* ---------- discover readings using /readings/index.json ---------- */
+async function discoverReadings(){
+  const indexPath = `/${READINGS_PATH}/index.json`;
+  $('#index-json-path').innerText = indexPath;
+  try{
+    const r = await fetch(indexPath, {cache:'no-store'});
+    if(r.ok){
+      const arr = await r.json();
+      readings = arr.map(i => typeof i === 'string' ? {path:i, title:i.split('/').pop()} : {path:i.path, title:i.title || i.path.split('/').pop(), download_url:i.download_url});
+      $('#discover-mode').innerText = 'index.json';
+      renderReadingList();
+      return;
+    } else {
+      // helpful debug: fetch returned non-OK (likely 404). Show network status.
+      $('#reading-list').innerHTML = `<div class="small" style="color:tomato">index.json fetch returned ${r.status}. Add /${READINGS_PATH}/index.json or adjust paths (see console).</div>`;
+      console.warn('index.json fetch response', r);
+      return;
+    }
+  }catch(e){
+    console.error('discoverReadings error', e);
+    $('#reading-list').innerHTML = `<div class="small" style="color:tomato">Failed to fetch /${READINGS_PATH}/index.json — see console for details.</div>`;
+    return;
+  }
+}
+
+/* render reading list */
 function renderReadingList(){
   const cont = $('#reading-list'); cont.innerHTML = '';
   readings.forEach(r=>{
@@ -204,54 +212,69 @@ function renderReadingList(){
   });
 }
 
-/* load reading text and annotations */
+/* ---------- load reading ---------- */
 async function loadReading(r){
   const url = r.download_url || `/${r.path}`;
   $('#post-title').innerText = r.title || r.path.split('/').pop();
   $('#current-file').innerText = r.path;
   current.filePath = r.path;
-  try {
-    const res = await fetch(url, { cache:'no-store' });
-    if(!res.ok) throw new Error('fetch fail');
+  try{
+    const res = await fetch(url, {cache:'no-store'});
+    if(!res.ok) throw new Error('fetch fail ' + res.status);
     current.raw = await res.text();
     current.title = r.title;
+    // render article and load annotations
     await renderArticleWithAnnotations();
-    subscribeToRealtime(current.filePath);
-  } catch(e){
-    $('#article').innerHTML = `<div class="small">Could not load ${url}</div>`;
+    // subscribe realtime if supabase available
+    if(supabase) subscribeToRealtime(current.filePath);
+  }catch(e){
+    console.error('loadReading error', e);
+    $('#article').innerHTML = `<div class="small" style="color:tomato">Could not load ${url} — ${String(e).slice(0,120)}</div>`;
   }
 }
 
-/* fetch annotations from Supabase */
+/* helpers to manipulate annotation DB (local mirror) */
+function annKeyFor(filePath){ return 'candle_local::' + filePath; }
+function saveLocalAnns(filePath, arr){ localStorage.setItem(annKeyFor(filePath), JSON.stringify(arr)); }
+function loadLocalAnns(filePath){ try{ const s = localStorage.getItem(annKeyFor(filePath)); return s ? JSON.parse(s) : []; } catch(e){ return []; } }
+
+/* fetch annotations from Supabase for the loaded file (graceful if supabase null) */
 async function fetchAnnsFromDb(filePath){
-  const { data, error } = await supabase.from('annotations').select('*').eq('file_path', filePath).order('created_at',{ascending:true});
-  if(error){ console.warn('fetchAnnsFromDb', error); return null; }
-  return data || [];
+  if(!supabase) return null;
+  try{
+    const { data, error } = await supabase.from('annotations').select('*').eq('file_path', filePath).order('created_at',{ascending:true});
+    if(error){ console.warn('fetchAnnsFromDb', error); return null; }
+    return data || [];
+  }catch(e){
+    console.error('fetchAnnsFromDb unexpected error', e);
+    return null;
+  }
 }
 
-/* render article + annotations (build annotated html using char indices) */
+/* render annotated article and annotation list */
 async function renderArticleWithAnnotations(){
+  const raw = current.raw || '';
   $('#article').innerHTML = '<div class="small">Loading annotations…</div>';
+  // get annotations from DB (if available) otherwise local fallback
   const dbAnns = await fetchAnnsFromDb(current.filePath).catch(()=>null);
-  const anns = (dbAnns && dbAnns.length) ? dbAnns : (JSON.parse(localStorage.getItem(storageKey(current.filePath))||'[]'));
-  // save local mirror
-  localStorage.setItem(storageKey(current.filePath), JSON.stringify(anns));
-  const html = buildAnnotatedHtml(current.raw||'', anns);
+  const anns = (dbAnns && dbAnns.length) ? dbAnns : loadLocalAnns(current.filePath);
+  saveLocalAnns(current.filePath, anns);
+  // build html using char indices
+  const html = buildAnnotatedHtml(raw, anns);
   $('#article').innerHTML = html;
-  attachHighlightHandlers();
   renderAnnList(anns);
 }
 
-/* build annotated HTML using indices start_idx/end_idx */
+/* build annotated HTML by char indices */
 function buildAnnotatedHtml(text, anns){
-  anns = (anns||[]).slice().sort((a,b)=> (a.start_idx||a.start) - (b.start_idx||b.start));
+  anns = (anns || []).slice().sort((a,b)=> (a.start_idx||a.start) - (b.start_idx||b.start));
   let out = '', cursor = 0;
-  for(const a of anns){
-    const s = (a.start_idx !== undefined) ? a.start_idx : a.start;
-    const e = (a.end_idx !== undefined) ? a.end_idx : a.end;
+  for(const ann of anns){
+    const s = ann.start_idx !== undefined ? ann.start_idx : ann.start;
+    const e = ann.end_idx !== undefined ? ann.end_idx : ann.end;
     if(s > cursor) out += escapeHtml(text.slice(cursor, s));
     const excerpt = escapeHtml(text.slice(s, e));
-    out += `<span class="hl" data-ann-id="${a.id}" title="${escapeHtml(a.note||'')}">${excerpt}</span>`;
+    out += `<span class="hl" data-ann-id="${ann.id}" title="${escapeHtml(ann.note||'')}">${excerpt}</span>`;
     cursor = e;
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
@@ -259,202 +282,127 @@ function buildAnnotatedHtml(text, anns){
   return `<p>${out}</p>`;
 }
 
-/* render annotation list into right column */
+/* render annotation list UI */
 function renderAnnList(anns){
-  const cont = $('#annotations-list'); cont.innerHTML = '';
+  const cont = $('#annotations-list');
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
+  cont.innerHTML = '';
   anns.slice().reverse().forEach(ann=>{
     const excerpt = (current.raw || '').slice(ann.start_idx || ann.start, ann.end_idx || ann.end);
-    const node = el('div',{className:'note-bubble'});
-    node.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(ann.author||'Annotator')}</strong></div><div class="small">${new Date(ann.created_at).toLocaleString()}</div></div><div style="margin-top:6px">${marked.parseInline(ann.note||'')}</div><div class="small" style="margin-top:6px"><em>Excerpt:</em> "${escapeHtml(excerpt.slice(0,140))}${excerpt.length>140?'…':''}"</div><div style="margin-top:8px;display:flex;gap:6px"><button class="collapse-btn" data-action="jump" data-id="${ann.id}">Jump</button><button class="collapse-btn" data-action="delete" data-id="${ann.id}">Delete</button></div>`;
+    const node = el('div',{className:'note-bubble'}, `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(ann.author||'Annotator')}</strong></div><div class="small">${new Date(ann.created_at).toLocaleString()}</div></div><div style="margin-top:6px">${marked.parseInline(ann.note||'')}</div><div class="small" style="margin-top:6px"><em>Excerpt:</em> "${escapeHtml(excerpt.slice(0,140))}${excerpt.length>140?'…':''}"</div><div style="margin-top:8px;display:flex;gap:6px"><button class="collapse-btn" data-action="jump" data-id="${ann.id}">Jump</button><button class="collapse-btn" data-action="delete" data-id="${ann.id}">Delete</button></div>`);
     cont.appendChild(node);
   });
   cont.querySelectorAll('[data-action]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
-      const anns = await fetchAnnsFromDb(current.filePath) || JSON.parse(localStorage.getItem(storageKey(current.filePath))||'[]');
+      const anns = await fetchAnnsFromDb(current.filePath) || loadLocalAnns(current.filePath) || [];
       const ann = anns.find(a=>String(a.id)===String(id));
       if(!ann) return alert('Not found');
-      if(action==='jump'){ const el = document.querySelector(`[data-ann-id="${id}"]`); if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.animate([{boxShadow:'0 0 0 rgba(0,0,0,0)'},{boxShadow:'0 10px 40px rgba(179,107,44,0.22)'}], {duration:900}); openAnnotationInEditor(ann); } }
-      else if(action==='delete'){ if(!confirm('Delete annotation?')) return; const { error } = await supabase.from('annotations').delete().eq('id', ann.id); if(error) console.warn('delete error', error); /* UI will update via realtime */ }
+      if(action === 'jump'){
+        const el = document.querySelector(`[data-ann-id="${id}"]`);
+        if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.animate([{boxShadow:'0 0 0 rgba(0,0,0,0)'},{boxShadow:'0 10px 40px rgba(179,107,44,0.22)'}], {duration:900}); }
+      } else if(action === 'delete'){
+        if(!confirm('Delete annotation?')) return;
+        if(!supabase){ // local-only delete
+          const filtered = loadLocalAnns(current.filePath).filter(a=>String(a.id)!==String(id));
+          saveLocalAnns(current.filePath, filtered);
+          renderArticleWithAnnotations();
+          return;
+        }
+        const { error } = await supabase.from('annotations').delete().eq('id', ann.id);
+        if(error) console.warn('delete error', error);
+        renderArticleWithAnnotations();
+      }
     });
   });
 }
 
-/* when clicking a highlight open its annotation in editor */
-function attachHighlightHandlers(){
-  document.querySelectorAll('#article .hl').forEach(node=>{
-    node.addEventListener('click', async (ev)=>{
-      const id = node.getAttribute('data-ann-id');
-      const anns = await fetchAnnsFromDb(current.filePath) || JSON.parse(localStorage.getItem(storageKey(current.filePath))||'[]');
-      const ann = anns.find(a=>String(a.id)===String(id));
-      if(ann) openAnnotationInEditor(ann);
-    });
-  });
-}
-
-/* open annotation in the right-hand editor (for viewing/editing) */
-function openAnnotationInEditor(ann){
-  pendingSelection = { start_idx: ann.start_idx || ann.start, end_idx: ann.end_idx || ann.end, text: (current.raw||'').slice(ann.start_idx||ann.start, ann.end_idx||ann.end) };
-  $('#selection-preview').innerText = `"${pendingSelection.text.length>120? pendingSelection.text.slice(0,120)+'…' : pendingSelection.text}"`;
-  $('#annotation-text').value = ann.note || '';
-  $('#annotation-editor').style.display = 'block';
-  $('#annotation-editor').dataset.editing = ann.id;
-  $('#editor-heading').innerText = 'Edit annotation';
-  // ensure right column un-collapsed and visible
-  $('#right-col').classList.remove('collapsed');
-}
-
-/* ---------- selection -> show floating annotate button ---------- */
-
-/* helper: compute char offsets of a selection inside #article by walking text nodes.
-   This is more robust than indexOf and handles repeated excerpts reliably.
-   Source: adapted pattern for getSelectionCharacterOffsetWithin
-*/
-function getSelectionCharOffsetsWithin(element){
-  const sel = window.getSelection();
-  if(!sel || sel.rangeCount === 0) return null;
-  const range = sel.getRangeAt(0);
-  // ensure selection is inside the element
-  if(!element.contains(range.startContainer) || !element.contains(range.endContainer)) return null;
-
-  // walk text nodes and sum lengths
-  let charIndex = 0, start = -1, end = -1;
-
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-  let node;
-  while(node = walker.nextNode()){
-    if(node === range.startContainer){
-      start = charIndex + range.startOffset;
-    }
-    if(node === range.endContainer){
-      end = charIndex + range.endOffset;
-      break; // end found, safe to break
-    }
-    charIndex += node.textContent.length;
-  }
-
-  if(start === -1 || end === -1) return null;
-  return { start, end, text: (element.innerText || '').slice(start, end) };
-}
-
-/* position floating annotate button near selection */
-const annotateBtn = $('#annotate-btn');
-
+/* ---------- selection handling (keeps your original indexOf approach for stability) ---------- */
 document.addEventListener('selectionchange', ()=>{
-  const container = $('#article');
   const sel = window.getSelection();
-  if(!sel || sel.rangeCount === 0){ hideAnnotateBtn(); return; }
-  const text = sel.toString().trim();
-  if(!text){ hideAnnotateBtn(); return; }
-  // compute offsets within raw text using DOM mapping
-  const offsets = getSelectionCharOffsetsWithin(container);
-  if(!offsets){ hideAnnotateBtn(); return; }
-  pendingSelection = { start_idx: offsets.start, end_idx: offsets.end, text: offsets.text || text };
-
-  // show floating button near range
-  const range = sel.getRangeAt(0).cloneRange();
-  const rect = range.getBoundingClientRect();
-  if(rect && rect.top !== 0 && rect.left !== 0){
-    annotateBtn.style.left = Math.max(8, rect.left + window.scrollX) + 'px';
-    annotateBtn.style.top = Math.max(8, rect.top + window.scrollY - 44) + 'px';
-  } else {
-    annotateBtn.style.left = (window.innerWidth/2 - 40) + 'px';
-    annotateBtn.style.top = (window.innerHeight/2 - 40) + 'px';
-  }
-  annotateBtn.style.display = 'block';
-});
-
-function hideAnnotateBtn(){ annotateBtn.style.display = 'none'; }
-
-/* clicking annotate button opens right-panel editor */
-annotateBtn.addEventListener('click', ()=>{
-  if(!pendingSelection) return alert('Select text first');
+  if(!sel || sel.rangeCount === 0) { pendingSelection = null; return; }
+  const text = sel.toString();
+  if(!text || !current.raw) { pendingSelection = null; return; }
+  const idx = current.raw.indexOf(text);
+  if(idx === -1){ pendingSelection = null; return; }
+  pendingSelection = { start_idx: idx, end_idx: idx + text.length, text };
+  $('#selection-preview').innerText = `"${text.length>80? text.slice(0,80)+'…' : text}"`;
   $('#annotation-editor').style.display = 'block';
-  $('#annotation-editor').dataset.editing = '';
-  $('#selection-preview').innerText = `"${pendingSelection.text.length>120? pendingSelection.text.slice(0,120)+'…' : pendingSelection.text}"`;
   $('#annotation-text').value = '';
-  // ensure right column visible
-  $('#right-col').classList.remove('collapsed');
-  hideAnnotateBtn();
 });
 
-/* cancel/save */
-$('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = ''; $('#annotation-text').value = ''; });
-
+/* save annotation -> insert into Supabase; UI updates immediately (graceful if supabase missing) */
+$('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display = 'none'; window.getSelection().removeAllRanges(); });
 $('#save-annotation').addEventListener('click', async ()=>{
   if(!current.filePath) return alert('Open a reading first.');
   const note = $('#annotation-text').value.trim(); if(!note) return alert('Write a note.');
   const author = localStorage.getItem('candle_author') || 'Annotator';
-  const editing = $('#annotation-editor').dataset.editing;
-  if(editing){
-    // update existing
-    const id = editing;
-    const { error } = await supabase.from('annotations').update({ note }).eq('id', id);
-    if(error){ console.warn('update error', error); alert('Update failed'); return; }
-    $('#annotation-editor').style.display = 'none'; pendingSelection = null; $('#annotation-editor').dataset.editing = '';
-    $('#sync-status').innerText = 'Updated';
-    setTimeout(()=>$('#sync-status').innerText='—',1400);
-    return;
-  }
   if(!pendingSelection) return alert('Select text first.');
   const payload = { file_path: current.filePath, start_idx: pendingSelection.start_idx, end_idx: pendingSelection.end_idx, note, author };
-  // optimistic UI: add temp local annotation
+  // update UI immediately by adding to local copy
+  const localAnns = loadLocalAnns(current.filePath);
   const temp = Object.assign({ id: 'temp_' + Date.now(), created_at: new Date().toISOString() }, payload);
-  const existing = JSON.parse(localStorage.getItem(storageKey(current.filePath))||'[]');
-  existing.push(temp); localStorage.setItem(storageKey(current.filePath), JSON.stringify(existing));
-  renderArticleWithAnnotations(); // will render temp
-  $('#annotation-editor').style.display='none'; pendingSelection = null;
-  // insert to supabase
-  const { data, error } = await supabase.from('annotations').insert([payload]).select().single();
-  if(error){ console.warn('insert error', error); $('#sync-status').innerText = 'Sync failed'; setTimeout(()=>$('#sync-status').innerText='—',2000); return; }
-  // replace temp local with real
-  const local = JSON.parse(localStorage.getItem(storageKey(current.filePath))||'[]').filter(a=>!String(a.id).startsWith('temp_'));
-  local.push(data); localStorage.setItem(storageKey(current.filePath), JSON.stringify(local));
-  renderArticleWithAnnotations();
-  $('#sync-status').innerText = 'Synced';
-  setTimeout(()=>$('#sync-status').innerText='—',1600);
+  localAnns.push(temp); saveLocalAnns(current.filePath, localAnns); renderArticleWithAnnotations();
+  $('#annotation-editor').style.display = 'none'; pendingSelection = null; window.getSelection().removeAllRanges();
+
+  if(!supabase){
+    // No supabase: keep local-only
+    $('#sync-status').innerText = 'Local only';
+    setTimeout(()=>$('#sync-status').innerText = '—', 1500);
+    return;
+  }
+
+  // push to DB
+  try{
+    const { data, error } = await supabase.from('annotations').insert([payload]).select().single();
+    if(error){ console.warn('insert error', error); $('#sync-status').innerText = 'Sync failed'; setTimeout(()=>$('#sync-status').innerText = '—', 2500); return; }
+    // remove temp local and replace with real saved data
+    const anns = loadLocalAnns(current.filePath).filter(a=>!String(a.id).startsWith('temp_'));
+    anns.push(data);
+    saveLocalAnns(current.filePath, anns);
+    renderArticleWithAnnotations();
+    $('#sync-status').innerText = 'Synced';
+    setTimeout(()=> $('#sync-status').innerText = '—', 1800);
+  }catch(e){
+    console.error('Insert to supabase error', e);
+    $('#sync-status').innerText = 'Sync failed';
+    setTimeout(()=>$('#sync-status').innerText = '—', 2500);
+  }
 });
 
-/* ---------- realtime subscription for this file ---------- */
+/* subscribe to realtime updates (guarded) */
 function subscribeToRealtime(filePath){
-  // remove old subscription
-  if(realtimeSub) try{ supabase.removeChannel(realtimeSub); } catch(e){}
-  realtimeSub = supabase.channel('public:annotations')
+  if(!supabase) return;
+  if(realtimeSubscription) {
+    try{ supabase.removeChannel(realtimeSubscription); }catch(e){}
+    realtimeSubscription = null;
+  }
+  realtimeSubscription = supabase.channel('public:annotations')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'annotations', filter: `file_path=eq.${filePath}` }, payload => {
-      // simple response: re-fetch and render
       renderArticleWithAnnotations();
     })
-    .subscribe((status) => { /* optional debug */ });
+    .subscribe((status) => { /* subscription status */ });
 }
 
-/* ---------- collapse left/right: show only mini logo when collapsed ---------- */
-$('#collapse-left').addEventListener('click', ()=> { $('#left-col').classList.toggle('collapsed'); });
-$('#collapse-right').addEventListener('click', ()=> { $('#right-col').classList.toggle('collapsed'); });
-
-/* export / clear */
-$('#export-annotations').addEventListener('click', ()=>{
-  if(!current.filePath) return alert('Open a file first.');
-  const anns = JSON.parse(localStorage.getItem(storageKey(current.filePath))||'[]');
-  const blob = new Blob([JSON.stringify(anns, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `${current.filePath.replaceAll('/','_')}_annotations.json`; a.click(); URL.revokeObjectURL(url);
+/* collapse buttons */
+$('#collapse-left').addEventListener('click', ()=> $('#left-col').classList.toggle('collapsed'));
+$('#collapse-right').addEventListener('click', ()=> $('#right-col').classList.toggle('collapsed'));
+$('#clear-local').addEventListener('click', ()=>{
+  if(!current.filePath) return alert('Open a file first');
+  if(!confirm('Clear local annotations for this file?')) return;
+  localStorage.removeItem(annKeyFor(current.filePath));
+  renderArticleWithAnnotations();
 });
 
-/* delete via real-time list button handled earlier (supabase delete) */
+/* helper: local ann key */
+function annKeyFor(path){ return 'candle_local::' + path; }
 
-/* ---------- init ---------- */
-async function initApp(){
-  $('#index-json-path').innerText = `/${READINGS_PATH}/index.json (recommended)`;
-  await discoverReadings();
-  if(readings.length) loadReading(readings[0]);
-  else $('#article').innerHTML = '<div class="small">No readings found — add /readings/index.json</div>';
-  if(!localStorage.getItem('candle_author')) localStorage.setItem('candle_author', 'Annotator');
+/* Only auto-call initApp if user already unlocked (we showed overlay earlier if not) */
+if(isUnlocked()){
+  // call later in next tick to avoid blocking UI thread
+  setTimeout(()=> initApp(), 10);
 }
 
-/* hide annotate button when scrolling / clicking elsewhere */
-document.addEventListener('scroll', ()=> hideAnnotateBtn(), true);
-document.addEventListener('mousedown', (ev) => { if(!ev.target.closest('#annotate-btn')){ /* do nothing */ }});
 </script>
 </body>
 </html>
