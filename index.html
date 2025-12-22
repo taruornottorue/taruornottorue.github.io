@@ -19,7 +19,12 @@ h1{margin:0;font-size:16px}
 .app{display:flex;height:calc(100vh - 64px);gap:16px;padding:16px}
 .col{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);overflow:auto;position:relative}
 .left{width:280px;flex-shrink:0}.center{flex:1;min-width:320px}.right{width:320px;flex-shrink:0}
-.collapsed{width:44px !important;padding:6px !important;overflow:visible !important}
+/* collapsed state: leave only the collapse icon visible */
+.col.collapsed{width:44px !important;padding:6px !important;overflow:visible !important}
+.col.collapsed .panel-body{display:none}
+.col.collapsed .panel-header .title-wrap{display:none}
+.col.collapsed .panel-header{justify-content:center}
+
 .panel-mini{display:none;font-size:16px}
 /* reading list */
 .reading-item{padding:14px;border-radius:8px;background:var(--glass);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -36,7 +41,7 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 #annot-fab{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
 /* collapse / icon buttons (gloomy aesthetic) */
 .collapse-btn{background:rgba(255,255,255,0.03);color:var(--muted);border:1px solid rgba(255,255,255,0.02);padding:6px;border-radius:8px;cursor:pointer}
-.collapse-icon{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700}
+.collapse-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700;padding:0}
 /* top-of-panel icon placements */
 .panel-header {
   display:flex;justify-content:space-between;align-items:center;margin-bottom:8px
@@ -60,7 +65,7 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 <header>
   <div style="display:flex;gap:12px;align-items:center"><h1>Readings</h1><div class="small">(and also annotating if you wish to)</div></div>
   <div style="display:flex;gap:8px;align-items:center">
-    <!-- sync status hidden intentionally for cleaner UI -->
+    <!-- sync status intentionally hidden for cleaner UI -->
   </div>
 </header>
 
@@ -72,11 +77,13 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
       <button class="collapse-btn collapse-icon" id="collapse-left" title="Toggle left">O</button>
     </div>
 
-    <div id="reading-list"><div class="small">Loading…</div></div>
-    <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0" />
-    <!-- index path & debug hidden to keep UI clean -->
-    <div id="index-json-path" style="display:none;margin-top:6px;color:var(--muted-2)"></div>
-    <div id="debug-block" style="display:none"></div>
+    <div class="panel-body">
+      <div id="reading-list"><div class="small">Loading…</div></div>
+      <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0" />
+      <!-- index path & debug hidden to keep UI clean -->
+      <div id="index-json-path" style="display:none;margin-top:6px;color:var(--muted-2)"></div>
+      <div id="debug-block" style="display:none"></div>
+    </div>
   </aside>
 
   <main class="col center">
@@ -95,20 +102,22 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
       <button class="collapse-btn collapse-icon" id="collapse-right" title="Toggle right">X</button>
     </div>
 
-    <div id="annotation-editor" class="annotation-editor" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><strong>Add annotation</strong></div>
-        <div class="small" id="selection-preview"></div>
+    <div class="panel-body">
+      <div id="annotation-editor" class="annotation-editor" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Add annotation</strong></div>
+          <div class="small" id="selection-preview"></div>
+        </div>
+        <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="collapse-btn" id="save-annotation">Save</button>
+          <button class="collapse-btn" id="cancel-annotation">Cancel</button>
+        </div>
+        <div class="small" style="margin-top:8px;color:var(--muted-2)">Saved locally immediately; Firestore sync happens automatically.</div>
       </div>
-      <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="collapse-btn" id="save-annotation">Save</button>
-        <button class="collapse-btn" id="cancel-annotation">Cancel</button>
-      </div>
-      <div class="small" style="margin-top:8px;color:var(--muted-2)">Saved locally immediately; Firestore sync happens automatically.</div>
-    </div>
 
-    <div id="annotations-list"><div class="small">Select text to create an annotation.</div></div>
+      <div id="annotations-list"><div class="small">Select text to create an annotation.</div></div>
+    </div>
   </aside>
 </div>
 
@@ -128,23 +137,9 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <script>
 /*
-  REWORKED for cleaner UI based on your requests:
-   - left panel: keeps "Primarily just short stories" and title "Readings"; hides index.json and debug info
-   - reading items show only centered title (no filename or "Open")
-   - center: removed "Viewing" label and file display
-   - right panel: header says "Annotations" (no small label), remove export/clear buttons
-   - scrollbar colors and button styles tuned for dark/gloomy aesthetic
-   - author shown as hardcoded "Stacy"
-   - removed delete buttons from annotation UI and removed date display
-   - minimize icons moved into each panel (O and X)
-
-  NOTE: Keep your /readings/index.json a JSON array of objects. Example:
-  [
-    { "path": "readings/sredni.md", "title": "Sredni Vashtar - Saki" },
-    { "path": "readings/hehe.md", "title": "Hehe" }
-  ]
-  (no trailing comma). Each object must include a valid path. If you prefer simple strings, the file can also be:
-  ["readings/sredni.md","readings/hehe.md"]
+  Updated: when a side panel gets the .collapsed class the .panel-body inside it is hidden
+  leaving only the collapse-icon visible. Clicking the icon toggles the collapsed state.
+  All other behavior from the previous version is preserved (annotations, grouping, Firestore).
 */
 
 /* CONFIG — edit these */
@@ -160,7 +155,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "458061841918",
   appId: "1:458061841918:web:1cc68c086bcbf81ee3acaf"
 };
-
+;
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
@@ -325,6 +320,8 @@ function renderAnnGroups(anns){
         $('#annotation-text').value = ann.note || '';
         $('#annotation-editor').style.display = 'block';
         $('#annotation-editor').dataset.editing = ann.id;
+        // ensure right panel expanded when editing
+        document.getElementById('right-col').classList.remove('collapsed');
       }
     });
   });
