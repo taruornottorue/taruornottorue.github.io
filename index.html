@@ -1,73 +1,72 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Read & Annotate — Candle (fixed)</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Read & Annotate — Candle (GitHub-backed, fixed)</title>
 
-<!-- dependencies -->
+<!-- Markdown -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 
 <style>
 :root{
-  --bg:#0f0b08; --panel:#17120f; --muted:#c9b89a; --muted-2:#7b6a58;
-  --accent:#b36b2c; --glass:rgba(255,255,255,0.02); --highlight:rgba(179,107,44,0.18); --radius:10px;
-  --collapsed-size:44px;
+  --bg:#0f0b08; --panel:#17120f; --muted:#c9b89a; --muted-2:#7b6a58; --accent:#b36b2c;
+  --glass:rgba(255,255,255,0.02); --highlight:rgba(179,107,44,0.18); --radius:10px;
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--muted);font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial;}
-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.02);}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--muted);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);}
 h1{margin:0;font-size:16px}
+.app{display:flex;height:calc(100vh - 64px);gap:16px;padding:16px;}
 
-/* app grid */
-.app{display:flex;height:calc(100vh - 64px);gap:12px;padding:12px;}
+/* columns */
 .col{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);overflow:auto;position:relative;}
 .left{width:280px;flex-shrink:0}
-.center{flex:1;min-width:360px}
+.center{flex:1;min-width:320px}
 .right{width:320px;flex-shrink:0}
 
-/* collapsed: show only small bar with two-dash icon at top */
-.collapsed { width: var(--collapsed-size) !important; padding:8px !important; overflow:visible !important; }
-.collapsed .inner-content { display:none !important; }           /* hide all content */
-.collapsed .collapsed-handle { display:flex !important; }        /* show handle */
-.collapsed .collapsed-handle .dash { display:block; }            /* show dash */
-.collapsed .collapsed-handle { position:absolute; top:8px; left:6px; align-items:center; justify-content:center; width:var(--collapsed-size); height:var(--collapsed-size); }
+/* collapsed look: only show the top two-dash logo */
+.collapsed { width:44px !important; padding:6px !important; overflow:visible !important; }
+.collapsed .panel-content{ display:none; }
+.collapsed .panel-mini{ display:block !important; text-align:center; margin-top:6px; color:var(--muted-2); font-weight:700; }
 
-/* collapsed handle (two dash logo) */
-.collapsed-handle{display:none; align-items:center; justify-content:center; cursor:pointer; border-radius:8px; background:transparent; color:var(--muted); width:36px; height:36px; border:1px solid rgba(255,255,255,0.03); }
-.dash{ font-weight:700; font-size:14px; letter-spacing:6px; color:var(--muted-2); display:none; }
+/* panel mini logo */
+.panel-mini{ display:none; font-size:16px; }
 
-/* reading list */
+/* reading items */
 .reading-item{padding:10px;border-radius:8px;background:var(--glass);margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
 .reading-title{font-weight:600}
 .small{font-size:12px;color:var(--muted-2)}
 
-/* article area - we use pre-wrap so newlines are preserved */
-#article{line-height:1.6;color:var(--muted);padding:8px;border-radius:8px;white-space:pre-wrap;word-break:break-word; background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent); min-height:200px;}
+/* article + highlights */
+#article{line-height:1.6;color:var(--muted);padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);}
+.hl{background:var(--highlight);border-radius:4px;padding:0 2px;cursor:pointer; text-decoration:none;}
+.hl:focus{outline:2px solid rgba(179,107,44,0.25);}
 
-/* highlights */
-.hl{background:var(--highlight);border-radius:4px;padding:0 2px;cursor:pointer;}
-.note-bubble{font-size:12px;color:var(--muted-2);margin-top:6px;padding:8px;background:rgba(255,255,255,0.01);border-radius:8px;border:1px dashed rgba(255,255,255,0.02);}
-
-/* floating annotate button */
-.floating-annot-btn{position:fixed;z-index:9999;padding:8px 12px;border-radius:999px;background:var(--accent);color:#fff;border:none;box-shadow:0 8px 26px rgba(179,107,44,0.18);cursor:pointer;display:none}
+/* annotation groups and tabs */
+.ann-group{ margin-bottom:12px; border-radius:8px; padding:8px; background: rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); }
+.ann-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.ann-tab{ padding:6px 8px; border-radius:8px; background:transparent; border:1px solid rgba(255,255,255,0.03); cursor:pointer; font-size:13px; color:var(--muted-2); }
+.ann-active{ background: linear-gradient(90deg,var(--accent), #8a5a2a); color:#fff; border:none; }
 
 /* annotation editor */
-.annotation-editor{margin-top:12px}
-textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);}
+.annotation-editor{ margin-bottom:12px; display:block; }
+textarea{ width:100%; min-height:88px; border-radius:8px; padding:8px; background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); }
 
-/* password overlay - FULL BLACK opaque */
-#pw-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:#000;color:var(--muted)}
-#pw-box{width:420px;background:#000;padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);text-align:center}
-#pw-box input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);margin-top:10px}
+/* floating annotate button (appears near selection) */
+#annot-fab{ position: absolute; z-index: 9999; display:none; padding:8px 12px; border-radius:999px; background:linear-gradient(90deg,var(--accent), #8a5a2a); color:white; border:none; cursor:pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); font-weight:600; }
 
-/* responsive */
+/* password overlay - FULL BLACK + prevents scroll */
+#pw-overlay{ position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center; background:#000; color:var(--muted); }
+#pw-box{ width:420px; background:#000; padding:22px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); box-shadow:0 12px 60px rgba(0,0,0,0.8); text-align:center; }
+#pw-box input{ width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--muted); margin-top:10px; }
+
+/* small responsive */
 @media (max-width:980px){
-  .app{flex-direction:column;height:calc(100vh - 88px)}
-  .left,.right{width:100%;order:2}
-  .center{order:1}
-  .collapsed { width:100% !important; }
+  .app{ flex-direction:column; height:calc(100vh - 88px); padding:10px; }
+  .left, .right { width:100%; order:2; }
+  .center { order:1; min-width:0; }
+  #annot-fab{ position:fixed; right:14px; bottom:90px; }
 }
 </style>
 </head>
@@ -75,140 +74,175 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <header>
   <div style="display:flex;gap:12px;align-items:center">
-    <h1 style="margin:0">Read & Annotate — Candle</h1>
-    <div class="small">single annotator • realtime</div>
+    <h1>Read & Annotate — Candle</h1>
+    <div class="small">single annotator mode</div>
   </div>
-
   <div style="display:flex;gap:8px;align-items:center">
-    <button id="collapse-left-btn" style="border-radius:8px;padding:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted);cursor:pointer">≡</button>
-    <button id="collapse-right-btn" style="border-radius:8px;padding:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted);cursor:pointer">☰</button>
-    <button id="export-btn" style="border-radius:8px;padding:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted);cursor:pointer">Export</button>
+    <button class="collapse-btn" id="collapse-left" title="Toggle readings panel">≡</button>
+    <button class="collapse-btn" id="collapse-right" title="Toggle annotations panel">☰</button>
+    <button class="collapse-btn" id="cfg-btn" title="Config">⚙︎</button>
   </div>
 </header>
 
 <div class="app">
-  <!-- LEFT -->
+  <!-- left -->
   <aside class="col left" id="left-col">
-    <div class="collapsed-handle" style="display:none"><div class="dash">--</div></div>
-
-    <div class="inner-content">
+    <div class="panel-mini">--</div>
+    <div class="panel-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div><div class="small">Readings</div><strong style="font-size:15px">Files</strong></div>
+        <div><div class="small">Readings</div><strong style="font-size:15px">Your files</strong></div>
         <div class="small" id="discover-mode">local</div>
       </div>
       <div id="reading-list"><div class="small">Loading…</div></div>
       <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0" />
-      <div><div class="small">Index file</div><div id="index-json-path" class="small" style="color:var(--muted-2)"></div></div>
+      <div><div class="small">Index file</div><div class="small" id="index-json-path" style="margin-top:6px;color:var(--muted-2)"></div></div>
     </div>
   </aside>
 
-  <!-- CENTER -->
+  <!-- center -->
   <main class="col center">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div><div class="small">Viewing</div><h2 id="post-title" style="margin:4px 0 0 0">Nothing loaded</h2></div>
       <div style="text-align:right"><div class="small">File</div><div id="current-file" class="small">—</div></div>
     </div>
-
-    <div id="article" tabindex="0">Open a reading from the left.</div>
-
-    <div id="annotation-editor" class="annotation-editor" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><strong id="editor-title">Add annotation</strong></div>
-        <div class="small" id="selection-preview"></div>
-      </div>
-      <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button id="save-annotation" style="padding:8px;border-radius:8px;background:var(--accent);color:#fff;border:none;cursor:pointer">Save</button>
-        <button id="cancel-annotation" style="padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);cursor:pointer">Cancel</button>
-      </div>
+    <div id="article" tabindex="0" aria-label="Article content">
+      <div class="small">Open a reading from the left.</div>
     </div>
   </main>
 
-  <!-- RIGHT -->
+  <!-- right: annotation editor + list -->
   <aside class="col right" id="right-col">
-    <div class="collapsed-handle" style="display:none"><div class="dash">--</div></div>
-
-    <div class="inner-content">
+    <div class="panel-mini">--</div>
+    <div class="panel-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div><div class="small">Annotations</div><strong style="font-size:15px">Notes</strong></div>
-        <div id="sync-status" class="small">—</div>
+        <div><div class="small">Annotations</div><strong style="font-size:15px">All notes</strong></div>
+        <div style="display:flex;gap:6px"><button class="collapse-btn" id="export-annotations" title="Export JSON">↓</button><button class="collapse-btn" id="clear-local" title="Clear local">✕</button></div>
       </div>
-      <div id="annotations-list"><div class="small">No annotations yet. Select text to create one.</div></div>
+
+      <!-- Editor lives here -->
+      <div id="annotation-editor" class="annotation-editor" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Add annotation</strong></div>
+          <div class="small" id="selection-preview"></div>
+        </div>
+        <textarea id="annotation-text" placeholder="Write your note (Markdown allowed)"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="collapse-btn" id="save-annotation">Save</button>
+          <button class="collapse-btn" id="cancel-annotation">Cancel</button>
+          <button class="collapse-btn" id="tog-token">GitHub</button>
+        </div>
+        <div class="small" style="margin-top:8px;color:var(--muted-2)">Saved locally immediately; GitHub push (if configured) will sync the file.</div>
+      </div>
+
+      <div id="annotations-list"><div class="small">Select text to create an annotation.</div></div>
     </div>
   </aside>
 </div>
 
 <!-- floating annotate button -->
-<button id="floating-annot" class="floating-annot-btn">Annotate</button>
+<button id="annot-fab">Annotate</button>
 
-<!-- password overlay (full black) -->
+<!-- Password overlay (FULL BLACK) -->
 <div id="pw-overlay" style="display:none">
   <div id="pw-box">
-    <h3 style="margin:0 0 6px 0;color:var(--muted)">Enter site password</h3>
-    <div class="small" style="color:var(--muted-2)">This is client-side gating (not server enforced).</div>
+    <h3 style="margin:0 0 6px 0;color:var(--muted)">Site password</h3>
+    <div class="small" style="color:var(--muted-2)">Local password (visible in source). Use Cloudflare Access for real protection.</div>
     <input id="pw-input" placeholder="Password" autocomplete="off" />
     <div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
-      <button id="pw-submit" style="padding:8px;border-radius:8px;background:var(--accent);color:#fff;border:none;cursor:pointer">Unlock</button>
-      <button id="pw-guest" style="padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);cursor:pointer">Guest</button>
+      <button class="collapse-btn" id="pw-submit">Unlock</button>
+      <button class="collapse-btn" id="pw-guest">Guest</button>
+    </div>
+  </div>
+</div>
+
+<!-- token modal (same as before) -->
+<div id="token-modal" style="display:none;position:fixed;left:0;right:0;top:0;bottom:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)">
+  <div style="background:var(--panel);padding:16px;border-radius:10px;width:420px;color:var(--muted)">
+    <h3 style="margin:0 0 8px 0">GitHub token</h3>
+    <div class="small" style="color:var(--muted-2);margin-bottom:8px">Paste a PAT (repo scope) to allow committing annotations. Token stored in sessionStorage.</div>
+    <input id="gh-token" style="width:100%;padding:8px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted)" placeholder="ghp_xxx..." />
+    <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+      <button class="collapse-btn" id="save-token">Save</button>
+      <button class="collapse-btn" id="cancel-token">Cancel</button>
     </div>
   </div>
 </div>
 
 <script>
-/* =================== CONFIG ===================
- Replace SUPABASE_URL and SUPABASE_ANON_KEY with your Supabase values.
- Add readings/index.json in your repo. Example:
-   [ { "path": "readings/sredni.md", "title": "Sredni Vashtar - Saki" } ]
-================================================= */
-const PASSWORD = "buttered-candle"; // change
+/* ---------------- CONFIG ----------------
+  Edit these:
+  - PASSWORD: local client-side password (visible in source).
+  - AUTODISCOVER: "indexJson" recommended.
+  - REPO_OWNER, REPO_NAME, REPO_BRANCH only needed if you use GitHub xfer.
+----------------------------------------- */
+const PASSWORD = "buttered-candle"; // change me
+const AUTODISCOVER = "indexJson";
+const REPO_OWNER = "YOUR_GITHUB_USER_OR_ORG";
+const REPO_NAME = "YOUR_REPO_NAME";
+const REPO_BRANCH = "main";
 const READINGS_PATH = "readings";
-const AUTODISCOVER = "indexJson"; // keep indexJson
-const SUPABASE_URL = "https://wtpmnawyjzthkrwjpmyv.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cG1uYXd5anp0aGtyd2pwbXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNTk4ODQsImV4cCI6MjA4MTkzNTg4NH0.ezh7Ai8oWQL9NiJtdMRQjjbA_MGgb66tdpbFH7ut7Ms";
-/* =============================================== */
 
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// helpers
-const $ = sel => document.querySelector(sel);
-function el(tag,attrs={},html=''){ const e=document.createElement(tag); Object.assign(e,attrs); if(html) e.innerHTML = html; return e; }
+/* helpers */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function el(tag, attrs={}, html=''){ const e = document.createElement(tag); Object.assign(e, attrs); if(html) e.innerHTML = html; return e; }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
 /* state */
 let readings = [];
 let current = { filePath:null, raw:null, title:null };
-let annotationsCache = []; // loaded annotations for current file
-let pendingSelection = null; // {start_idx,end_idx,text}
-let isEditingId = null;
+let pendingSelection = null;
 
-// password gating
-function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; }catch(e){ return false; } }
-function setUnlocked(){ try{ sessionStorage.setItem('candle_unlocked','1'); }catch(e){} }
+/* ---------- Password overlay (full-black) ---------- */
+function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; } catch(e){ return false; } }
+function setUnlocked(){ try{ sessionStorage.setItem('candle_unlocked','1'); } catch(e){} }
 
-if(!isUnlocked()) $('#pw-overlay').style.display='flex'; else initApp();
-$('#pw-submit').addEventListener('click', ()=>{ if($('#pw-input').value === PASSWORD){ setUnlocked(); $('#pw-overlay').style.display='none'; initApp(); } else alert('Wrong password'); });
-$('#pw-guest').addEventListener('click', ()=>{ setUnlocked(); $('#pw-overlay').style.display='none'; initApp(); });
+/* Show overlay and disable page scrolling */
+function showOverlay(){ $('#pw-overlay').style.display = 'flex'; document.body.style.overflow = 'hidden'; $('#pw-input').focus(); }
+function hideOverlay(){ $('#pw-overlay').style.display = 'none'; document.body.style.overflow = ''; }
 
-/* discover readings (indexJson) */
+if(!isUnlocked()) showOverlay(); else initApp();
+
+$('#pw-submit').addEventListener('click', ()=> {
+  if($('#pw-input').value === PASSWORD){ setUnlocked(); hideOverlay(); initApp(); }
+  else alert('Wrong password');
+});
+$('#pw-guest').addEventListener('click', ()=> { setUnlocked(); hideOverlay(); initApp(); });
+
+/* ---------- readings discovery ---------- */
 async function discoverReadings(){
-  const idx = `/${READINGS_PATH}/index.json`;
-  $('#index-json-path').innerText = idx;
-  try {
-    const r = await fetch(idx, {cache:'no-store'});
+  const indexPath = `/${READINGS_PATH}/index.json`;
+  try{
+    const r = await fetch(indexPath, { cache:'no-store' });
     if(r.ok){
       const arr = await r.json();
-      readings = arr.map(i => typeof i === 'string' ? {path:i, title:i.split('/').pop()} : {path:i.path, title:i.title || i.path.split('/').pop(), download_url:i.download_url});
+      readings = arr.map(item => (typeof item === 'string') ? { path: item, title: item.split('/').pop() } : { path: item.path, title: item.title || item.path.split('/').pop(), download_url: item.download_url });
       $('#discover-mode').innerText = 'index.json';
+      $('#index-json-path').innerText = indexPath;
       renderReadingList();
       return;
     }
-  } catch(e){}
-  $('#reading-list').innerHTML = '<div class="small">No readings found. Add /readings/index.json</div>';
+  }catch(e){}
+  // optional: fallback to GitHub API if desired
+  if(AUTODISCOVER === 'githubApi'){
+    try{
+      const api = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${READINGS_PATH}?ref=${REPO_BRANCH}`;
+      const r = await fetch(api);
+      if(r.ok){
+        const j = await r.json();
+        readings = j.filter(it => it.type === 'file' && /\.(md|txt|html)$/i.test(it.name)).map(it => ({ path: it.path, title: it.name, download_url: it.download_url }));
+        renderReadingList();
+        return;
+      }
+    }catch(e){}
+  }
+  $('#reading-list').innerHTML = '<div class="small">No readings found. Add /readings/index.json or set AUTODISCOVER to githubApi.</div>';
+  $('#index-json-path').innerText = '';
 }
 
-/* render readings */
 function renderReadingList(){
-  const cont = $('#reading-list'); cont.innerHTML = '';
+  const cont = $('#reading-list');
+  cont.innerHTML = '';
   readings.forEach(r=>{
     const item = el('div',{className:'reading-item'});
     item.innerHTML = `<div><div class="reading-title">${escapeHtml(r.title)}</div><div class="small">${escapeHtml(r.path.split('/').pop())}</div></div><div class="small">Open</div>`;
@@ -217,338 +251,355 @@ function renderReadingList(){
   });
 }
 
-/* load a reading file */
+/* ---------- load reading ---------- */
 async function loadReading(r){
   const url = r.download_url || `/${r.path}`;
   $('#post-title').innerText = r.title || r.path.split('/').pop();
   $('#current-file').innerText = r.path;
   current.filePath = r.path;
   try{
-    const res = await fetch(url, {cache:'no-store'});
-    if(!res.ok) throw new Error('fetch failed');
+    const res = await fetch(url, { cache:'no-store' });
+    if(!res.ok) throw new Error('Fetch failed');
     current.raw = await res.text();
-    current.title = r.title;
-    await loadAnnotationsForCurrent();
-    renderArticle();      // render text nodes + highlight spans
-    setupRealtimeSubscription();
+    current.title = r.title || r.path.split('/').pop();
+    await renderArticleWithAnnotations(); // will fetch GH annotations first, then local fallback
   }catch(e){
-    $('#article').innerHTML = `<div class="small">Could not load ${url}</div>`;
-    console.error(e);
+    $('#article').innerHTML = `<div class="small">Error loading ${escapeHtml(url)}</div>`;
   }
 }
 
-/* ========== Annotation storage (Supabase) ========== */
-async function loadAnnotationsForCurrent(){
-  if(!current.filePath) return;
-  try{
-    const { data, error } = await supabase.from('annotations').select('*').eq('file_path', current.filePath).order('created_at', { ascending: true });
-    if(error) { console.warn('fetch anns', error); annotationsCache = loadLocalAnns(); return; }
-    annotationsCache = data || [];
-    saveLocalAnns(annotationsCache);
-  }catch(e){
-    console.warn(e);
-    annotationsCache = loadLocalAnns();
+/* ---------- local annotations model ---------- */
+const STORAGE_PREFIX = 'candle_annot_';
+function annKeyFor(fp){ return STORAGE_PREFIX + 'anns::' + fp; }
+function loadAnnsLocal(fp){ try{ const s = localStorage.getItem(annKeyFor(fp)); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
+function saveAnnsLocal(fp, arr){ localStorage.setItem(annKeyFor(fp), JSON.stringify(arr)); }
+
+/* ---------- build annotated HTML (group same start/end) ---------- */
+function buildAnnotatedHtml(text, anns){
+  anns = (anns || []).slice().sort((a,b)=> a.start - b.start);
+  // Group annotations by exact start/end (so multiple notes on same excerpt -> one visible highlight)
+  const groups = [];
+  for(const a of anns){
+    const last = groups.length ? groups[groups.length -1] : null;
+    if(last && last.start === a.start && last.end === a.end) { last.items.push(a); }
+    else { groups.push({ start: a.start, end: a.end, items: [a] }); }
   }
-}
-
-function saveLocalAnns(arr){
-  if(!current.filePath) return;
-  localStorage.setItem('candle_local::' + current.filePath, JSON.stringify(arr || []));
-}
-function loadLocalAnns(){
-  if(!current.filePath) return [];
-  try{ return JSON.parse(localStorage.getItem('candle_local::' + current.filePath) || '[]'); }catch(e){return [];}
-}
-
-/* render article using text nodes (keeps character index stability) */
-function renderArticle(){
-  const container = $('#article');
-  container.innerHTML = ''; // clear
-  const text = current.raw || '';
-
-  // Build nodes from text and annotation ranges:
-  // annotationsCache sorted by start_idx
-  const anns = (annotationsCache || []).slice().sort((a,b)=> a.start_idx - b.start_idx);
-
-  let cursor = 0;
-  for(const ann of anns){
-    if(ann.start_idx > cursor){
-      const seg = text.slice(cursor, ann.start_idx);
-      container.appendChild(document.createTextNode(seg));
-    }
-    // create highlight span for annotated portion
-    const span = document.createElement('span');
-    span.className = 'hl';
-    span.dataset.annId = ann.id;
-    span.textContent = text.slice(ann.start_idx, ann.end_idx);
-    container.appendChild(span);
-    cursor = ann.end_idx;
+  let out = '', cursor = 0;
+  for(const g of groups){
+    if(g.start > cursor) out += escapeHtml(text.slice(cursor, g.start));
+    const excerpt = escapeHtml(text.slice(g.start, g.end));
+    // data-ids attribute
+    const ids = g.items.map(i=>i.id).join(',');
+    out += `<span class="hl" tabindex="0" data-ann-ids="${ids}" data-start="${g.start}" data-end="${g.end}">${excerpt}</span>`;
+    cursor = g.end;
   }
-  if(cursor < text.length){
-    container.appendChild(document.createTextNode(text.slice(cursor)));
-  }
-
-  // set up click handler for highlights
-  container.querySelectorAll('.hl').forEach(el=>{
-    el.addEventListener('click', (ev)=>{
-      const id = el.dataset.annId;
-      openAnnotationById(id);
-      ev.stopPropagation();
-    });
-  });
+  if(cursor < text.length) out += escapeHtml(text.slice(cursor));
+  out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+  return `<p>${out}</p>`;
 }
 
-/* open annotation in right panel and highlight it */
-function openAnnotationById(id){
-  const ann = (annotationsCache || []).find(a=>String(a.id) === String(id));
-  if(!ann) return;
-  // ensure right panel open
-  if($('#right-col').classList.contains('collapsed')) toggleRightCollapse();
-  // scroll highlight into view
-  const el = document.querySelector(`[data-ann-id="${id}"]`);
-  if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.animate([{boxShadow:'0 0 0 rgba(0,0,0,0)'},{boxShadow:'0 10px 40px rgba(179,107,44,0.22)'}], {duration:900}); }
-  // show annotation in list by focusing it (we re-render list and include jump/edit/delete buttons)
-  renderAnnotationList();
-  // optionally open an editing UI - here we'll scroll the list and visually mark the item (simple)
-  const node = document.querySelector(`#ann-${ann.id}`);
-  if(node) node.scrollIntoView({ behavior:'smooth', block:'center' });
+/* ---------- render article & annotations ---------- */
+async function renderArticleWithAnnotations(){
+  const raw = current.raw || '';
+  // try fetching remote annotations (raw.githubusercontent)
+  const gh = await fetchAnnotationsFromGitHub(current.filePath).catch(()=>null);
+  const anns = gh && gh.length ? gh : loadAnnsLocal(current.filePath);
+  saveAnnsLocal(current.filePath, anns);
+  $('#article').innerHTML = buildAnnotatedHtml(raw, anns);
+  renderAnnGroups(anns);
 }
 
-/* render the annotations list (right column) */
-function renderAnnotationList(){
+/* ---------- annotation UI: grouped tabs ---------- */
+function renderAnnGroups(anns){
   const cont = $('#annotations-list');
-  if(!annotationsCache || annotationsCache.length === 0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
   cont.innerHTML = '';
-  for(const ann of annotationsCache.slice().reverse()){
-    const excerpt = current.raw.slice(ann.start_idx, ann.end_idx);
-    const wrapper = el('div', { className: 'note-bubble', id: `ann-${ann.id}` });
-    wrapper.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(ann.author || 'Annotator')}</strong></div><div class="small">${new Date(ann.created_at).toLocaleString()}</div></div><div style="margin-top:6px">${marked.parseInline(ann.note || '')}</div><div class="small" style="margin-top:6px"><em>Excerpt:</em> "${escapeHtml(excerpt.slice(0,140))}${excerpt.length>140?'…':''}"</div><div style="margin-top:8px;display:flex;gap:6px"><button class="collapse-btn" data-action="jump" data-id="${ann.id}">Jump</button><button class="collapse-btn" data-action="edit" data-id="${ann.id}">Edit</button><button class="collapse-btn" data-action="delete" data-id="${ann.id}">Delete</button></div>`;
-    cont.appendChild(wrapper);
+  if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
+
+  // rebuild groups by start/end
+  anns = anns.slice().sort((a,b)=> a.start - b.start);
+  const groups = [];
+  for(const a of anns){
+    const last = groups.length ? groups[groups.length -1] : null;
+    if(last && last.start === a.start && last.end === a.end) last.items.push(a);
+    else groups.push({ start: a.start, end: a.end, items: [a] });
   }
 
-  // attach handlers
+  groups.forEach((g, gi) => {
+    const excerpt = current.raw.slice(g.start, g.end);
+    const groupEl = el('div',{className:'ann-group'});
+    const excerptNode = el('div', {}, `<div class="small" style="margin-bottom:8px"><em>Excerpt:</em> "${escapeHtml(excerpt.slice(0,200))}${excerpt.length>200?'…':''}"</div>`);
+    groupEl.appendChild(excerptNode);
+
+    // tabs row
+    const tabs = el('div',{className:'ann-tabs'});
+    g.items.forEach((it, idx) => {
+      const tab = el('button',{className:'ann-tab', dataset: { annId: it.id }}, `#${it.id} — ${escapeHtml((it.author||'You').slice(0,12))}`);
+      if(idx === 0) tab.classList.add('ann-active');
+      tab.addEventListener('click', ()=> {
+        // set active class
+        tabs.querySelectorAll('.ann-tab').forEach(t=> t.classList.remove('ann-active'));
+        tab.classList.add('ann-active');
+        // render the body below
+        body.innerHTML = `${marked.parseInline(it.note||'') || '<div class="small-muted">(no note)</div>'}<div class="small" style="margin-top:8px;color:var(--muted-2)">${new Date(it.created_at).toLocaleString()}</div><div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${it.id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${it.id}" data-action="edit">Edit</button><button class="collapse-btn" data-id="${it.id}" data-action="delete">Delete</button></div>`;
+      });
+      tabs.appendChild(tab);
+    });
+    groupEl.appendChild(tabs);
+
+    // body area for the currently active tab (first by default)
+    const body = el('div', { style: 'margin-top:8px' }, `${marked.parseInline(g.items[0].note||'')}<div class="small" style="margin-top:8px;color:var(--muted-2)">${new Date(g.items[0].created_at).toLocaleString()}</div><div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button><button class="collapse-btn" data-id="${g.items[0].id}" data-action="delete">Delete</button></div>`);
+
+    groupEl.appendChild(body);
+    cont.appendChild(groupEl);
+  });
+
+  // attach handlers for jump/edit/delete
   cont.querySelectorAll('[data-action]').forEach(btn=>{
-    btn.addEventListener('click', async (ev)=>{
-      const id = btn.getAttribute('data-id'), act = btn.getAttribute('data-action');
-      const ann = annotationsCache.find(a => String(a.id) === String(id));
-      if(!ann) return alert('Annotation not found');
-      if(act === 'jump'){
-        openAnnotationById(id);
-      } else if(act === 'delete'){
+    btn.addEventListener('click', (ev)=>{
+      const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
+      const anns = loadAnnsLocal(current.filePath) || [];
+      const ann = anns.find(a=> String(a.id) === String(id));
+      if(!ann) return alert('Not found');
+      if(action === 'jump'){
+        const span = document.querySelector(`[data-ann-ids*="${id}"]`);
+        if(span){ span.scrollIntoView({ behavior:'smooth', block:'center' }); span.animate([{ boxShadow:'0 0 0 rgba(0,0,0,0)' }, { boxShadow:'0 10px 40px rgba(179,107,44,0.22)' }], { duration:900 }); }
+      } else if(action === 'delete'){
         if(!confirm('Delete annotation?')) return;
-        // delete in DB
-        const { error } = await supabase.from('annotations').delete().eq('id', ann.id);
-        if(error) console.warn(error);
-        // reload
-        await loadAnnotationsForCurrent();
-        renderArticle();
-        renderAnnotationList();
-      } else if(act === 'edit'){
-        // open editor prefilled, set editing id
-        isEditingId = ann.id;
-        if($('#right-col').classList.contains('collapsed')) toggleRightCollapse();
+        const filtered = anns.filter(a=> String(a.id) !== String(id));
+        saveAnnsLocal(current.filePath, filtered);
+        attemptPushAnnotations(filtered, current.filePath);
+        renderArticleWithAnnotations();
+      } else if(action === 'edit'){
+        // prefill editor on right
+        pendingSelection = { start: ann.start, end: ann.end, text: current.raw.slice(ann.start, ann.end) };
+        $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,90)}${pendingSelection.text.length>90?'…':''}"`;
         $('#annotation-text').value = ann.note || '';
-        $('#selection-preview').innerText = `"${current.raw.slice(ann.start_idx, ann.end_idx).slice(0,80)}${ann.end_idx - ann.start_idx > 80 ? '…' : ''}"`;
         $('#annotation-editor').style.display = 'block';
-        $('#editor-title').innerText = 'Edit annotation';
+        $('#annotation-editor').dataset.editing = ann.id;
       }
     });
   });
 }
 
-/* ---------- selection -> show floating annotate button ---------- */
-/* We compute start/end indices by using character offsets in the article container
-   which we constructed from raw text nodes (so offsets are stable).
-*/
-function getCharacterOffsetWithin(containerEl, node, offset) {
-  // compute char offset of (node, offset) relative to containerEl.textContent
-  let chars = 0;
-  const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT, null, false);
-  let currentNode;
-  while ((currentNode = walker.nextNode())) {
-    if (currentNode === node) {
-      return chars + offset;
-    }
-    chars += currentNode.textContent.length;
-  }
-  return -1;
+/* ---------- selection handling & ChatGPT-like annotate button ---------- */
+const annotFab = document.getElementById('annot-fab');
+let lastRangeRect = null;
+
+function hideFab(){ annotFab.style.display = 'none'; annotFab.dataset.visible = '0'; }
+function showFabAt(rect){
+  if(!rect) return hideFab();
+  // position the fab: a bit above the rect
+  const scrollY = window.scrollY || window.pageYOffset;
+  const left = Math.max(8, rect.left + (rect.width / 2) - 40);
+  const top = rect.top + scrollY - 44;
+  annotFab.style.left = `${left}px`;
+  annotFab.style.top = `${top}px`;
+  annotFab.style.display = 'block'; annotFab.dataset.visible = '1';
 }
 
-const floatingBtn = $('#floating-annot');
 document.addEventListener('selectionchange', ()=>{
   const sel = window.getSelection();
-  if(!sel || sel.rangeCount === 0) { hideFloatingBtn(); pendingSelection = null; return; }
+  if(!sel || sel.rangeCount === 0){ pendingSelection = null; hideFab(); return; }
   const range = sel.getRangeAt(0);
-  const container = $('#article');
-  if(!container.contains(range.commonAncestorContainer)) { hideFloatingBtn(); pendingSelection = null; return; }
-  const start = getCharacterOffsetWithin(container, range.startContainer, range.startOffset);
-  const end = getCharacterOffsetWithin(container, range.endContainer, range.endOffset);
-  if(start === -1 || end === -1 || start === end) { hideFloatingBtn(); pendingSelection = null; return; }
-  const s = Math.min(start, end), e = Math.max(start, end);
-  pendingSelection = { start_idx: s, end_idx: e, text: container.textContent.slice(s,e) };
+  const text = sel.toString();
+  if(!text || !current.raw){ pendingSelection = null; hideFab(); return; }
+  // find text index in raw
+  const idx = current.raw.indexOf(text);
+  if(idx === -1){ pendingSelection = null; hideFab(); return; }
+  pendingSelection = { start: idx, end: idx + text.length, text };
 
-  // position floating button near selection
+  // position fab near selection rect (use range.getBoundingClientRect)
   const rect = range.getBoundingClientRect();
-  if(rect && rect.width > 0){
-    showFloatingBtn(rect.right - 60, rect.top - 40);
+  lastRangeRect = rect;
+  // show fab (desktop) or floating near bottom on mobile
+  if(window.innerWidth < 980){
+    annotFab.style.right = '14px';
+    annotFab.style.bottom = '110px';
+    annotFab.style.left = '';
+    annotFab.style.top = '';
+    annotFab.style.position = 'fixed';
+    annotFab.style.display = 'block';
   } else {
-    hideFloatingBtn();
+    annotFab.style.position = 'absolute';
+    showFabAt(rect);
   }
 });
 
-function showFloatingBtn(x, y){
-  floatingBtn.style.left = (x) + 'px';
-  floatingBtn.style.top = (y) + 'px';
-  floatingBtn.style.display = 'block';
-}
-function hideFloatingBtn(){
-  floatingBtn.style.display = 'none';
-}
-
-/* clicking floating annotate -> open right panel editor */
-floatingBtn.addEventListener('click', ()=>{
-  if(!pendingSelection) return;
-  // open right panel if collapsed
-  if($('#right-col').classList.contains('collapsed')) toggleRightCollapse();
+// clicking the fab opens the annotation editor in right panel
+annotFab.addEventListener('click', ()=>{
+  if(!pendingSelection) return alert('No selection.');
+  $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,120)}${pendingSelection.text.length>120?'…':''}"`;
   $('#annotation-text').value = '';
-  $('#selection-preview').innerText = `"${pendingSelection.text.length>90? pendingSelection.text.slice(0,90)+'…': pendingSelection.text}"`;
   $('#annotation-editor').style.display = 'block';
-  $('#editor-title').innerText = 'Add annotation';
-  hideFloatingBtn();
+  $('#annotation-editor').dataset.editing = '';
+  // scroll right panel up so editor visible
+  document.getElementById('right-col').scrollTop = 0;
+  hideFab();
 });
 
-/* save annotated note (new or edit) */
-$('#save-annotation').addEventListener('click', async ()=>{
-  const note = $('#annotation-text').value.trim();
-  if(!note) return alert('Write a note first.');
-  const author = localStorage.getItem('candle_author') || 'Annotator';
+/* hide fab when clicking elsewhere */
+document.addEventListener('mousedown', (e)=> {
+  if(e.target === annotFab || annotFab.contains(e.target)) return;
+  // if click outside and selection empty, hide
+  const sel = window.getSelection();
+  if(!sel || sel.toString().trim() === '') {
+    hideFab();
+  }
+});
 
-  if(isEditingId){
-    // edit existing
-    const payload = { note, edited_at: new Date().toISOString() };
-    const { data, error } = await supabase.from('annotations').update(payload).eq('id', isEditingId);
-    if(error) console.warn('edit err', error);
-    isEditingId = null;
+/* ---------- annotation save/edit ---------- */
+$('#cancel-annotation').addEventListener('click', ()=>{
+  pendingSelection = null; $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = ''; window.getSelection().removeAllRanges(); hideFab();
+});
+
+$('#save-annotation').addEventListener('click', async ()=>{
+  if(!current.filePath) return alert('Open a reading first.');
+  const note = $('#annotation-text').value.trim(); if(!note) return alert('Write a note.');
+  let anns = loadAnnsLocal(current.filePath) || [];
+  const editingId = $('#annotation-editor').dataset.editing;
+  if(editingId){
+    const idx = anns.findIndex(a=> String(a.id) === String(editingId));
+    if(idx === -1) return alert('Annotation not found.');
+    anns[idx].note = note; anns[idx].edited_at = new Date().toISOString();
   } else {
     if(!pendingSelection) return alert('Select text first.');
-    // optimistic local update: push a temp object
-    const temp = { id: 'temp_' + Date.now(), file_path: current.filePath, start_idx: pendingSelection.start_idx, end_idx: pendingSelection.end_idx, note, author, created_at: new Date().toISOString() };
-    annotationsCache.push(temp); saveLocalAnns(annotationsCache); renderArticle(); renderAnnotationList();
-    $('#annotation-editor').style.display = 'none';
-    pendingSelection = null; window.getSelection().removeAllRanges();
-    // insert to Supabase
-    const { data, error } = await supabase.from('annotations').insert([{ file_path: current.filePath, start_idx: temp.start_idx, end_idx: temp.end_idx, note, author }]).select().single();
-    if(error){ console.warn(error); $('#sync-status').innerText = 'Sync failed'; setTimeout(()=>$('#sync-status').innerText = '—',2000); return; }
-    // replace temp with real data
-    annotationsCache = annotationsCache.filter(a=>!String(a.id).startsWith('temp_'));
-    annotationsCache.push(data);
-    saveLocalAnns(annotationsCache);
-    renderArticle(); renderAnnotationList();
-    $('#sync-status').innerText = 'Synced';
-    setTimeout(()=>$('#sync-status').innerText = '—',1400);
+    const newAnn = { id: Date.now() + Math.floor(Math.random()*999), start: pendingSelection.start, end: pendingSelection.end, note, author: localStorage.getItem('candle_author') || 'Annotator', created_at: new Date().toISOString() };
+    anns.push(newAnn);
+  }
+  saveAnnsLocal(current.filePath, anns);
+  renderArticleWithAnnotations();
+  $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = '';
+  pendingSelection = null; window.getSelection().removeAllRanges();
+  hideFab();
+
+  // push to GitHub (non-blocking)
+  attemptPushAnnotations(anns, current.filePath);
+});
+
+/* ---------- highlight click => open group in right panel ---------- */
+document.addEventListener('click', (ev)=>{
+  const t = ev.target;
+  if(t && t.matches && t.matches('.hl')){
+    const ids = t.getAttribute('data-ann-ids') || '';
+    const [firstId] = ids.split(',').filter(Boolean);
+    if(!firstId) return;
+    // open right panel (if collapsed, expand)
+    $('#right-col').classList.remove('collapsed');
+    // scroll right col to top
+    document.getElementById('right-col').scrollTop = 0;
+    // render groups from local anns and then find group that contains this start/end
+    const anns = loadAnnsLocal(current.filePath) || [];
+    renderAnnGroups(anns);
+    // find group start/end from span's data-start/data-end
+    const start = parseInt(t.getAttribute('data-start')), end = parseInt(t.getAttribute('data-end'));
+    // scroll the corresponding group into view
+    // groups are rebuilt so find matching excerpt node
+    setTimeout(()=> {
+      const groups = Array.from(document.querySelectorAll('#annotations-list .ann-group'));
+      for(const g of groups){
+        if(g.innerText.includes(current.raw.slice(start, Math.min(end, start+40)).trim().slice(0,12))){
+          g.scrollIntoView({behavior:'smooth', block:'center'}); g.animate([{transform:'translateY(-4px)'},{transform:'translateY(0)'}],{duration:500}); break;
+        }
+      }
+    }, 120);
   }
 });
 
-/* cancel edit/new */
-$('#cancel-annotation').addEventListener('click', ()=>{
-  isEditingId = null;
-  $('#annotation-editor').style.display = 'none';
-  pendingSelection = null;
-  window.getSelection().removeAllRanges();
-});
+/* ---------- GitHub helpers (same functions as before) ---------- */
+function annotationsFilePathFor(filePath){
+  const safe = filePath.replaceAll('/','___');
+  return `annotations/${safe}-annotations.json`;
+}
+function getGitHubToken(){ return sessionStorage.getItem('candle_gh_token') || null; }
+function setGitHubToken(t){ if(!t) sessionStorage.removeItem('candle_gh_token'); else sessionStorage.setItem('candle_gh_token', t); }
+function utf8ToBase64(str){ return btoa(unescape(encodeURIComponent(str))); }
 
-/* realtime subscription: subscribe to changes for current file */
-let currentSubscription = null;
-function setupRealtimeSubscription(){
-  if(currentSubscription) { try{ supabase.removeChannel(currentSubscription); }catch(e){} currentSubscription = null; }
-  if(!current.filePath) return;
-  currentSubscription = supabase.channel('public:annotations:'+current.filePath)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'annotations', filter: `file_path=eq.${current.filePath}` }, payload => {
-      // when other clients add/update/delete, re-fetch
-      setTimeout(async ()=> {
-        await loadAnnotationsForCurrent();
-        renderArticle();
-        renderAnnotationList();
-      }, 100);
-    })
-    .subscribe(status => {
-      // console.log('sub status', status);
-    });
+async function githubGetFile(path){
+  const token = getGitHubToken(); if(!token) throw new Error('no-token');
+  const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${encodeURIComponent(path)}?ref=${REPO_BRANCH}`;
+  const r = await fetch(url, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json' }});
+  if(r.status === 404) return null;
+  if(!r.ok) throw new Error('GitHub GET error ' + r.status);
+  return await r.json();
 }
 
-/* export annotations to JSON file download */
-$('#export-btn').addEventListener('click', ()=>{
+async function githubPutFile(path, contentText, message){
+  const token = getGitHubToken(); if(!token) throw new Error('no-token');
+  const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${encodeURIComponent(path)}`;
+  const existing = await githubGetFile(path).catch(e=>{ if(String(e)==='Error: no-token') throw e; return null; });
+  const body = { message: message || `Update annotations ${path}`, content: utf8ToBase64(contentText), branch: REPO_BRANCH };
+  if(existing && existing.sha) body.sha = existing.sha;
+  const r = await fetch(url, { method: 'PUT', headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json' }, body: JSON.stringify(body) });
+  if(!r.ok){ const txt = await r.text(); throw new Error('GitHub PUT failed: ' + r.status + ' ' + txt); }
+  return await r.json();
+}
+
+async function attemptPushAnnotations(anns, filePath){
+  const token = getGitHubToken();
+  if(!token){ console.info('No GitHub token; not pushing'); return; }
+  const path = annotationsFilePathFor(filePath);
+  const payload = JSON.stringify(anns, null, 2);
+  const statusEl = el('div',{className:'small'}, 'Syncing…');
+  const rightCol = $('#right-col'); rightCol.insertBefore(statusEl, rightCol.querySelector('.panel-content'));
+  try{
+    await githubPutFile(path, payload, `Update annotations for ${filePath}`);
+    statusEl.innerText = 'Synced to GitHub';
+    setTimeout(()=> statusEl.remove(), 1400);
+  }catch(err){
+    statusEl.innerText = 'GitHub push failed';
+    console.error(err);
+    setTimeout(()=> statusEl.remove(), 2400);
+  }
+}
+
+/* fetch annotations via raw.githubusercontent */
+async function fetchAnnotationsFromGitHub(filePath){
+  const path = annotationsFilePathFor(filePath);
+  const rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/${path}`;
+  try{
+    const r = await fetch(rawUrl, { cache: 'no-store' });
+    if(!r.ok) throw new Error('no-raw');
+    return await r.json();
+  }catch(e){
+    return null;
+  }
+}
+
+/* token modal handlers */
+$('#cfg-btn').addEventListener('click', ()=> { $('#token-modal').style.display = 'flex'; $('#gh-token').value = getGitHubToken() || ''; });
+$('#tog-token').addEventListener('click', ()=> { $('#token-modal').style.display = 'flex'; $('#gh-token').value = getGitHubToken() || ''; });
+$('#save-token').addEventListener('click', ()=> { const v = $('#gh-token').value.trim(); if(!v) return alert('Paste a token or Cancel'); setGitHubToken(v); $('#token-modal').style.display='none'; alert('Token saved to sessionStorage.'); });
+$('#cancel-token').addEventListener('click', ()=> $('#token-modal').style.display='none');
+
+/* collapse left/right */
+$('#collapse-left').addEventListener('click', ()=> { $('#left-col').classList.toggle('collapsed'); });
+$('#collapse-right').addEventListener('click', ()=> { $('#right-col').classList.toggle('collapsed'); });
+
+/* export/clear */
+$('#export-annotations').addEventListener('click', ()=>{
   if(!current.filePath) return alert('Open a file first.');
-  const blob = new Blob([JSON.stringify(annotationsCache, null, 2)], { type: 'application/json' });
+  const anns = loadAnnsLocal(current.filePath) || [];
+  const blob = new Blob([JSON.stringify(anns, null, 2)], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `${current.filePath.replaceAll('/','_')}_annotations.json`; a.click(); URL.revokeObjectURL(url);
 });
-
-/* collapse left/right behaviours */
-function toggleLeftCollapse(){ $('#left-col').classList.toggle('collapsed'); updateCollapsedUI(); }
-function toggleRightCollapse(){ $('#right-col').classList.toggle('collapsed'); updateCollapsedUI(); }
-$('#collapse-left-btn').addEventListener('click', toggleLeftCollapse);
-$('#collapse-right-btn').addEventListener('click', toggleRightCollapse);
-
-function updateCollapsedUI(){
-  // show/hide dash handles
-  const leftCollapsed = $('#left-col').classList.contains('collapsed');
-  const rightCollapsed = $('#right-col').classList.contains('collapsed');
-  document.querySelectorAll('.left .collapsed-handle').forEach(n=> leftCollapsed ? n.style.display = 'flex' : n.style.display = 'none');
-  document.querySelectorAll('.right .collapsed-handle').forEach(n=> rightCollapsed ? n.style.display = 'flex' : n.style.display = 'none');
-  // when collapsed ensure there is no textual content visible (CSS hides .inner-content)
-}
-
-/* clicking collapsed-handle toggles back */
-document.querySelectorAll('.collapsed-handle').forEach(h=>{
-  h.addEventListener('click', (ev)=>{
-    const col = h.closest('.col');
-    col.classList.toggle('collapsed');
-    updateCollapsedUI();
-    ev.stopPropagation();
-  });
+$('#clear-local').addEventListener('click', ()=>{
+  if(!confirm('Clear local annotations for current file?')) return;
+  if(current.filePath){ localStorage.removeItem(annKeyFor(current.filePath)); renderArticleWithAnnotations(); }
 });
 
-/* load initial readings and bootstrap */
+/* ---------- init ---------- */
 async function initApp(){
+  $('#index-json-path').innerText = `/${READINGS_PATH}/index.json (recommended)`;
   await discoverReadings();
   if(readings.length > 0) loadReading(readings[0]);
-  else $('#article').innerHTML = '<div class="small">No readings found. Add /readings/index.json</div>';
+  else $('#article').innerHTML = '<div class="small">No readings found in /readings/. Add files or index.json.</div>';
   if(!localStorage.getItem('candle_author')) localStorage.setItem('candle_author','Annotator');
 }
 
-/* helper to open an annotation when highlight clicked */
-function openAnnotationFromHighlight(ev){
-  const el = ev.target;
-  if(!el.classList.contains('hl')) return;
-  const annId = el.dataset.annId;
-  openAnnotationById(annId);
-}
+/* small helper (annKeyFor) used above in clear-local */
+function annKeyFor(fp){ return STORAGE_PREFIX + 'anns::' + fp; }
 
-/* attach global clicks to close editor when clicking outside */
-document.addEventListener('click', (ev)=>{
-  const insideArticle = $('#article').contains(ev.target);
-  const insideEditor = $('#annotation-editor').contains(ev.target);
-  const insideAnnotBtn = floatingBtn.contains(ev.target);
-  if(!insideEditor && !insideAnnotBtn && !insideArticle){
-    // close floating button & selection
-    hideFloatingBtn();
-  }
-});
-
-/* keyboard shortcuts */
-document.addEventListener('keydown', (ev)=>{
-  if(ev.key === 'Escape'){
-    hideFloatingBtn();
-    $('#annotation-editor').style.display = 'none';
-    pendingSelection = null;
-    isEditingId = null;
-    window.getSelection().removeAllRanges();
-  }
-});
-
-/* load on start if unlocked */
-if(isUnlocked()) initApp();
 </script>
 </body>
 </html>
