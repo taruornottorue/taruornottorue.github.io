@@ -155,7 +155,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "458061841918",
   appId: "1:458061841918:web:1cc68c086bcbf81ee3acaf"
 };
-;
+
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
@@ -260,7 +260,9 @@ function buildAnnotatedHtml(text, anns){
     cursor = g.end;
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
-  out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+  out = out.replace(/
+{2,}/g, '</p><p>').replace(/
+/g, '<br>');
   return `<p>${out}</p>`;
 }
 
