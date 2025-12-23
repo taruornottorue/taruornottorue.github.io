@@ -169,6 +169,8 @@ const FIREBASE_CONFIG = {
 };
 
 
+
+
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 
@@ -176,6 +178,18 @@ const db = firebase.firestore();
 const $ = s => document.querySelector(s);
 const el = (t,a={},h='') => { const e = document.createElement(t); Object.assign(e,a); if(h) e.innerHTML = h; return e; };
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+
+// parse note for special-author prefix (e.g. "Taru ")
+function parseNoteAuthor(rawNote){
+  // If the note starts with "Taru " (allow leading whitespace), treat author as Taru
+  // and remove that prefix from the stored note.
+  if(!rawNote) return { note: rawNote, author: undefined };
+  const m = rawNote.match(/^\s*Taru\s+(.*)$/);
+  if(m){
+    return { note: m[1].trim(), author: 'Taru' };
+  }
+  return { note: rawNote, author: undefined };
+}
 
 /* app state */
 window.appState = window.appState || {};
@@ -285,7 +299,7 @@ function renderArticleWithAnnotations(){
   renderAnnGroups(anns);
 }
 
-/* render annotation groups: simplified UI — no dates, no delete; author hardcoded to Stacy */
+/* render annotation groups: simplified UI — no dates, no delete; author falls back to Stacy */
 function renderAnnGroups(anns){
   const cont = $('#annotations-list'); cont.innerHTML = '';
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
@@ -304,7 +318,8 @@ function renderAnnGroups(anns){
     groupEl.appendChild(el('div',{}, `<div class="small" style="margin-bottom:8px"><em>Excerpt:</em> "${escapeHtml(excerpt.slice(0,200))}${excerpt.length>200?'…':''}"</div>`));
     const tabs = el('div',{className:'ann-tabs'});
     g.items.forEach((it, idx)=>{
-      const tab = el('button',{className:'ann-tab'}, `Stacy`);
+      const authorLabel = escapeHtml(it.author || 'Stacy');
+      const tab = el('button',{className:'ann-tab'}, authorLabel);
       if(idx===0) tab.classList.add('ann-active');
       tab.addEventListener('click', ()=> {
         tabs.querySelectorAll('.ann-tab').forEach(t=>t.classList.remove('ann-active'));
@@ -429,17 +444,31 @@ $('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null;
 
 $('#save-annotation').addEventListener('click', async ()=>{
   if(!window.current.filePath) return alert('Open a reading first.');
-  const note = $('#annotation-text').value.trim(); if(!note) return alert('Write a note.');
+  let noteRaw = $('#annotation-text').value.trim(); if(!noteRaw) return alert('Write a note.');
   const editingId = $('#annotation-editor').dataset.editing;
   const nowISO = new Date().toISOString();
   let anns = loadAnnsLocal(window.current.filePath) || [];
 
+  // parse possible "Taru " prefix
+  const parsed = parseNoteAuthor(noteRaw);
+  const finalNote = parsed.note;
+  const finalAuthor = parsed.author; // undefined if no prefix
+
   if(editingId){
     const idx = anns.findIndex(a=> String(a.id) === String(editingId));
     if(idx === -1) return alert('Annotation not found.');
-    anns[idx].note = note; anns[idx].edited_at = nowISO;
+    anns[idx].note = finalNote;
+    if(finalAuthor) anns[idx].author = finalAuthor;
+    anns[idx].edited_at = nowISO;
     saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations();
-    try{ const remoteId = anns[idx]._remoteId; if(remoteId) await db.collection('annotations').doc(remoteId).update({ note, edited_at: nowISO }); }catch(e){ console.warn('remote edit failed', e); }
+    try{
+      const remoteId = anns[idx]._remoteId;
+      if(remoteId){
+        const updateObj = { note: finalNote, edited_at: nowISO };
+        if(finalAuthor) updateObj.author = finalAuthor;
+        await db.collection('annotations').doc(remoteId).update(updateObj);
+      }
+    }catch(e){ console.warn('remote edit failed', e); }
   } else {
     if(!pendingSelection) return alert('Select text first.');
 
@@ -454,8 +483,8 @@ $('#save-annotation').addEventListener('click', async ()=>{
       start_idx: startIdx,
       end_idx: endIdx,
       text: pendingSelection.text,
-      note,
-      author: 'Stacy',
+      note: finalNote,
+      author: finalAuthor || 'Stacy',
       created_at: nowISO
     };
     anns.push(newAnn); saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations();
