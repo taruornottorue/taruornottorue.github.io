@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Readings (annotator)</title>
 
-<!-- markdown renderer + firebase (compat libs used to keep your existing code shape) -->
+<!-- markdown renderer + firebase (compat libs kept) -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -37,6 +37,7 @@ h1{margin:0;font-size:16px}
 .annotation-editor{margin-bottom:12px}
 textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
 #annot-fab{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
+#lookup-btn{position:absolute;z-index:9999;display:none;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,#fff,#eee);color:#111;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.35);font-weight:600}
 .collapse-btn{background:rgba(255,255,255,0.03);color:var(--muted);border:1px solid rgba(255,255,255,0.02);padding:6px;border-radius:8px;cursor:pointer}
 .collapse-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700;padding:0}
 .panel-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px }
@@ -49,17 +50,20 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 #pw-box input{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);margin-top:6px}
 #pw-submit{width:180px;padding:12px;border-radius:10px;border:none;margin-top:12px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;font-weight:700;cursor:pointer}
 
-.comment-panel{margin-top:8px;border-radius:8px;padding:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)}
+.comment-modal{position:fixed;right:18px;bottom:18px;z-index:200000;max-width:520px;background:var(--panel);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);color:var(--muted)}
 .comment-item{padding:6px;border-radius:6px;margin-bottom:6px;background:rgba(0,0,0,0.02);font-size:13px}
 .comment-input{display:flex;gap:8px;margin-top:8px}
 .comment-input textarea{min-height:56px}
+
+#define-modal{display:none;position:fixed;right:18px;bottom:18px;z-index:200001;background:var(--panel);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);max-width:420px;color:var(--muted)}
+#define-modal .close-btn{margin-top:8px}
 
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg, rgba(179,107,44,0.18), rgba(179,107,44,0.12));border-radius:10px;border:2px solid rgba(0,0,0,0)}
 *{scrollbar-width:thin;scrollbar-color: rgba(179,107,44,0.18) transparent}
 
-@media (max-width:980px){.app{flex-direction:column;height:calc(100vh - 88px);padding:10px}#annot-fab{position:fixed;right:14px;bottom:90px} }
+@media (max-width:980px){.app{flex-direction:column;height:calc(100vh - 88px);padding:10px}#annot-fab{position:fixed;right:14px;bottom:90px}#lookup-btn{position:fixed;right:14px;bottom:150px}}
 </style>
 </head>
 <body>
@@ -118,7 +122,8 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
   </aside>
 </div>
 
-<button id="annot-fab">Annotate</button>
+<button id="annot-fab" aria-label="Annotate">Annotate</button>
+<button id="lookup-btn" aria-label="Look up">Look up</button>
 
 <div id="pw-overlay">
   <div id="pw-box">
@@ -131,25 +136,33 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
   </div>
 </div>
 
-<!-- small helper modal for definitions -->
-<div id="define-modal" style="display:none;position:fixed;right:18px;bottom:18px;z-index:200000;background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);max-width:420px;color:var(--muted)"></div>
+<!-- comment modal -->
+<div id="comment-modal" class="comment-modal" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center"><strong>Comments</strong><button class="collapse-btn" id="close-comments">Close</button></div>
+  <div id="comments-list" style="margin-top:8px"><div class="small">No comments loaded.</div></div>
+  <div class="comment-input">
+    <textarea id="comment-text" placeholder="Write a comment..."></textarea>
+    <button class="collapse-btn" id="post-comment">Post</button>
+  </div>
+</div>
+
+<!-- define modal (opaque background, not translucent) -->
+<div id="define-modal">
+  <div id="define-content"></div>
+  <div style="text-align:right"><button class="collapse-btn close-btn" id="close-define">Close</button></div>
+</div>
 
 <script>
 /*
-  Rewritten annotator with:
-  - precise char-index mapping from DOM selection -> raw indices (charIndexFromRange)
-  - fab fallback placement for small bounding rects
-  - selection canonicalization improvements
-  - edit: update remote doc, fallback to delete+create
-  - delete button (local + remote)
-  - comments stored under annotations/{id}/comments (subcollection) with inline UI "Comment"
-  - word lookup via dictionaryapi.dev (Define)
-  - careful integration to avoid breaking other flows
-  NOTES:
-  - I did NOT change the "doubling" behaviour you mentioned because I couldn't be absolutely sure of the root cause without live tests. See bottom comments for debugging hints.
+  Implemented fixes A-F:
+  A) Accurate display->raw mapping (displayToRawMap) to avoid index shift
+  B) FAB pointerdown prevents selection loss and reliably captures selection
+  C) Comments are handled in a persistent modal (not inline) to avoid disappearing after re-render
+  D) Lookup UI: "Look up" button next to Annotate for single-word selections; opaque define modal
+  E) Fallback string-match only used when mapping fails; normalized
+  F) Prevent exact-duplicate annotations for same start/end (open editor instead)
 */
 
-/* CONFIG — edit these */
 const PASSWORD = "Stacy"; // change this
 const READINGS_PATH = "readings";   // change if different
 /* Paste your Firebase web config here */
@@ -164,43 +177,33 @@ const FIREBASE_CONFIG = {
 };
 
 
+
+
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 
-/* small utils */
+/* DOM helpers */
 const $ = s => document.querySelector(s);
 const el = (t,a={},h='') => { const e = document.createElement(t); Object.assign(e,a); if(h) e.innerHTML = h; return e; };
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
-
-/* canonicalizer for matching (helps avoid smart-quote/newline mismatches) */
 function normalizeForMatching(s){
   if(s === undefined || s === null) return '';
   return String(s)
-    .replace(/\r\n/g,'\n')
-    .replace(/\r/g,'\n')
+    .replace(/\r\n/g,'\n').replace(/\r/g,'\n')
     .replace(/\u2018|\u2019/g,"'")
     .replace(/\u201C|\u201D/g,'"')
     .replace(/\u00A0/g,' ')
     .replace(/\s+/g,' ');
 }
 
-/* parse note for special-author prefix (e.g. "Taru ") */
-function parseNoteAuthor(rawNote){
-  if(!rawNote) return { note: rawNote, author: undefined };
-  const m = rawNote.match(/^\s*(Taru)\s+(.*)$/i);
-  if(m){
-    return { note: m[2].trim(), author: m[1] };
-  }
-  return { note: rawNote, author: undefined };
-}
-
 /* app state */
-window.appState = window.appState || {};
-let readings = [];
 window.current = window.current || { filePath: null, raw: null, title: null };
+let readings = [];
 let pendingSelection = null;
 let unsubscribeRealtime = null;
 let pollingFallback = null;
+window.current.displayToRawMap = []; // map display index -> raw index
+window.current.displayText = '';     // the flattened display text (raw without newline chars)
 
 /* password overlay */
 function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; }catch(e){return false;} }
@@ -214,7 +217,7 @@ $('#pw-input').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') $('#pw-s
 
 function normalizePath(p){ if(!p) return p; return p.startsWith('/') ? p.slice(1) : p; }
 
-/* discover readings */
+/* Readings discovery/render */
 async function discoverReadings(){
   const indexPath = `/${READINGS_PATH}/index.json`;
   try{
@@ -242,44 +245,50 @@ function renderReadingList(){
   });
 }
 
-/* load a reading */
-async function loadReading(r){
-  const url = r.download_url || `/${r.path}`;
-  $('#post-title').innerText = r.title || r.path.split('/').pop();
-  window.current.filePath = normalizePath(r.path);
-  try{
-    const res = await fetch(url, {cache:'no-store'});
-    if(!res.ok) throw new Error('fetch failed');
-    window.current.raw = await res.text();
-    window.current.title = r.title || r.path.split('/').pop();
-    await fetchAnnotationsOnce(window.current.filePath);
-    renderArticleWithAnnotations();
-    subscribeRealtime(window.current.filePath);
-  }catch(e){
-    $('#article').innerHTML = `<div class="small">Error loading ${escapeHtml(url)}</div>`;
-    console.error('loadReading error', e);
+/* Build display mapping: create displayText (raw without newline chars) and a map displayIndex->rawIndex */
+function buildDisplayMapping(raw){
+  const map = [];
+  let display = '';
+  for(let i=0;i<raw.length;i++){
+    const ch = raw[i];
+    if(ch === '\n') continue; // we remove newlines from display text because in DOM we use <br> or paragraphs
+    map.push(i);
+    display += ch;
   }
+  return { displayText: display, displayToRawMap: map };
 }
 
-/* local storage helpers */
-const STORAGE_PREFIX = 'candle_annot_';
-function annKeyFor(fp){ return STORAGE_PREFIX + 'anns::' + fp; }
-function loadAnnsLocal(fp){ try{ const s = localStorage.getItem(annKeyFor(fp)); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
-function saveAnnsLocal(fp, arr){ localStorage.setItem(annKeyFor(fp), JSON.stringify(arr)); }
-
-/* build annotated html (groups by identical start/end so multiple notes attach to same span) */
+/* build annotated HTML (uses raw indices for spans) */
 function buildAnnotatedHtml(text, anns){
-  // ensure anns are sorted and numeric
-  anns = (anns || []).slice().sort((a,b)=> (Number(a.start_idx||a.start) - Number(b.start_idx||b.start)));
-  const groups = [];
+  // sanitize and ensure numeric start/end
+  anns = (anns || []).slice().map(a => {
+    const s = Number(a.start_idx ?? a.start);
+    const e = Number(a.end_idx ?? a.end);
+    return Object.assign({}, a, { start_idx: s, end_idx: e });
+  }).filter(a => !isNaN(a.start_idx) && !isNaN(a.end_idx) && a.end_idx > a.start_idx)
+    .sort((a,b)=> a.start_idx - b.start_idx);
+
+  // dedupe exact same start/end (keep first)
+  const seen = new Set();
+  const filtered = [];
   for(const a of anns){
-    const start = Number(a.start_idx ?? a.start);
-    const end = Number(a.end_idx ?? a.end);
-    if(isNaN(start) || isNaN(end) || start < 0 || end < 0 || end <= start) continue;
+    const key = `${a.start_idx}:${a.end_idx}`;
+    if(seen.has(key)) continue;
+    seen.add(key);
+    filtered.push(a);
+  }
+
+  // groups by identical start/end so that multiple notes on same span are grouped
+  const groups = [];
+  for(const a of filtered){
+    const start = a.start_idx;
+    const end = a.end_idx;
     const last = groups.length ? groups[groups.length-1] : null;
     if(last && last.start === start && last.end === end) last.items.push(a);
     else groups.push({ start, end, items: [a] });
   }
+
+  // Build output by iterating raw string slices and injecting spans at start/end
   let out = '', cursor = 0;
   for(const g of groups){
     if(g.start > cursor) out += escapeHtml(text.slice(cursor, g.start));
@@ -289,32 +298,49 @@ function buildAnnotatedHtml(text, anns){
     cursor = g.end;
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
-  // newline handling
+
+  // Convert newlines in the resulting escaped text to paragraphs/line breaks like previously
   out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
   return `<p>${out}</p>`;
 }
 
-/* render article + annotations list */
+/* render article and compute display->raw mapping for later accurate conversions */
 function renderArticleWithAnnotations(){
   const raw = window.current.raw || '';
+  // build display mapping first and store it on window.current
+  const mapping = buildDisplayMapping(raw);
+  window.current.displayText = mapping.displayText;
+  window.current.displayToRawMap = mapping.displayToRawMap;
+
   const anns = loadAnnsLocal(window.current.filePath) || [];
   $('#article').innerHTML = buildAnnotatedHtml(raw, anns);
   renderAnnGroups(anns);
 }
 
-/* render annotation groups with tabs & comment button */
+/* local storage helpers */
+const STORAGE_PREFIX = 'candle_annot_';
+function annKeyFor(fp){ return STORAGE_PREFIX + 'anns::' + fp; }
+function loadAnnsLocal(fp){ try{ const s = localStorage.getItem(annKeyFor(fp)); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
+function saveAnnsLocal(fp, arr){ localStorage.setItem(annKeyFor(fp), JSON.stringify(arr)); }
+
+/* render annotation groups - same idea but note comments open modal */
 function renderAnnGroups(anns){
   const cont = $('#annotations-list'); cont.innerHTML = '';
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
-  anns = anns.slice().sort((a,b)=> (Number(a.start_idx||a.start) - Number(b.start_idx||b.start)));
+  anns = anns.slice().map(a => ({ ...a, start_idx: Number(a.start_idx ?? a.start), end_idx: Number(a.end_idx ?? a.end) }))
+        .filter(a => !isNaN(a.start_idx) && !isNaN(a.end_idx) && a.end_idx > a.start_idx)
+        .sort((a,b)=> a.start_idx - b.start_idx);
+
+  // group
   const groups = [];
   for(const a of anns){
-    const start = Number(a.start_idx ?? a.start);
-    const end = Number(a.end_idx ?? a.end);
+    const start = a.start_idx;
+    const end = a.end_idx;
     const last = groups.length ? groups[groups.length-1] : null;
     if(last && last.start === start && last.end === end) last.items.push(a);
     else groups.push({ start, end, items: [a] });
   }
+
   groups.forEach(g=>{
     const excerpt = window.current.raw.slice(g.start, g.end);
     const groupEl = el('div',{className:'ann-group'});
@@ -324,10 +350,9 @@ function renderAnnGroups(anns){
       const authorLabel = escapeHtml(it.author || 'Stacy');
       const tab = el('button',{className:'ann-tab'}, authorLabel);
       if(idx===0) tab.classList.add('ann-active');
-      tab.addEventListener('click', async ()=> {
+      tab.addEventListener('click', ()=> {
         tabs.querySelectorAll('.ann-tab').forEach(t=>t.classList.remove('ann-active'));
         tab.classList.add('ann-active');
-        // body content for selected annotation
         body.innerHTML = `${marked.parseInline(it.note||'')}<div style="margin-top:8px;display:flex;gap:8px">
           <button class="collapse-btn" data-id="${it.id}" data-action="jump">Jump</button>
           <button class="collapse-btn" data-id="${it.id}" data-action="edit">Edit</button>
@@ -348,99 +373,79 @@ function renderAnnGroups(anns){
     cont.appendChild(groupEl);
   });
 
-  // delegate action buttons
   cont.querySelectorAll('[data-action]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
       const anns = loadAnnsLocal(window.current.filePath) || [];
-      // find by local id first, otherwise try remote id match (comments use remote id)
-      const ann = anns.find(a=> String(a.id) === String(id)) || anns.find(a=> String(a._remoteId) === String(id));
+      const ann = anns.find(a=> String(a.id) === String(id)) || anns.find(a => String(a._remoteId) === String(id));
       if(action === 'jump'){
         if(!ann) return alert('Not found');
-        const sp = document.querySelector(`[data-ann-ids*="${ann.id}"]`) || document.querySelector(`[data-start="${ann.start_idx||ann.start}"]`);
+        const sp = document.querySelector(`[data-ann-ids*="${ann.id}"]`) || document.querySelector(`[data-start="${ann.start_idx}"]`);
         if(sp){ sp.scrollIntoView({behavior:'smooth', block:'center'}); sp.animate([{boxShadow:'0 0 0 rgba(0,0,0,0)'},{boxShadow:'0 10px 40px rgba(179,107,44,0.22)'}],{duration:900}); }
       } else if(action === 'edit'){
         if(!ann) return alert('Not found');
-        pendingSelection = { start_idx: Number(ann.start_idx ?? ann.start), end_idx: Number(ann.end_idx ?? ann.end), text: window.current.raw.slice(Number(ann.start_idx ?? ann.start), Number(ann.end_idx ?? ann.end)) };
+        pendingSelection = { start_idx: Number(ann.start_idx), end_idx: Number(ann.end_idx), text: window.current.raw.slice(Number(ann.start_idx), Number(ann.end_idx)) };
         $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,90)}${pendingSelection.text.length>90?'…':''}"`;
         $('#annotation-text').value = ann.note || '';
         $('#annotation-editor').style.display = 'block';
         $('#annotation-editor').dataset.editing = ann.id;
         $('#delete-annotation').style.display = 'inline-block';
-        // store remote id for deletion if present
         $('#delete-annotation').dataset.remoteId = ann._remoteId || '';
         document.getElementById('right-col').classList.remove('collapsed');
       } else if(action === 'comment'){
-        // open comment UI for the given remote id (if no remote id, ask to save first)
         const remoteId = id;
         if(!remoteId) return alert('This annotation has not been saved remotely yet. Save first to enable comments.');
-        openCommentPanelFor(remoteId, btn.closest('.ann-group'));
+        openCommentModal(remoteId);
       } else if(action === 'delete'){
         if(!ann) return alert('Not found');
         if(!confirm('Delete this annotation?')) return;
-        // local removal
         const idx = anns.findIndex(a => String(a.id) === String(ann.id));
-        if(idx !== -1) { anns.splice(idx,1); saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
-        // remote removal
-        try{
-          if(ann._remoteId) await deleteAnnotationRemote(ann._remoteId);
-        }catch(e){ console.warn('remote delete failed', e); alert('Remote delete failed'); }
+        if(idx !== -1){ anns.splice(idx,1); saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
+        try{ if(ann._remoteId) await deleteAnnotationRemote(ann._remoteId); }catch(e){ console.warn('remote delete failed', e); alert('Remote delete failed'); }
       }
     });
   });
 }
 
-/* COMMENTS UI */
-async function openCommentPanelFor(remoteId, anchorEl){
-  // anchorEl is ann-group container; create or toggle a comment panel inside it
+/* COMMENT modal logic (persistent outside re-renders) */
+let currentCommentRemoteId = null;
+$('#close-comments').addEventListener('click', ()=>{ $('#comment-modal').style.display='none'; currentCommentRemoteId = null; $('#comments-list').innerHTML = '<div class="small">No comments loaded.</div>'; });
+
+async function openCommentModal(remoteId){
+  currentCommentRemoteId = remoteId;
+  $('#comment-modal').style.display = 'block';
+  $('#comments-list').innerHTML = '<div class="small">Loading…</div>';
   try{
-    // find existing
-    let panel = anchorEl.querySelector('.comment-panel');
-    if(panel){
-      panel.remove(); return;
-    }
-    panel = el('div',{className:'comment-panel'}, '<div class="small" style="margin-bottom:6px">Comments</div>');
-    const commentsList = el('div',{className:'comments-list'}, '<div class="small">Loading…</div>');
-    panel.appendChild(commentsList);
-
-    const inputWrap = el('div',{className:'comment-input'});
-    const ta = el('textarea',{className:'comment-text', placeholder:'Write a comment...'});
-    ta.style.flex='1';
-    const postBtn = el('button',{className:'collapse-btn'}, 'Post');
-    inputWrap.appendChild(ta); inputWrap.appendChild(postBtn);
-    panel.appendChild(inputWrap);
-    anchorEl.appendChild(panel);
-
-    // fetch comments once
     const snap = await db.collection('annotations').doc(remoteId).collection('comments').orderBy('created_at','asc').get();
     const comments = [];
-    snap.forEach(d => { const dd = d.data(); comments.push({ id:d.id, ...dd }); });
-    commentsList.innerHTML = '';
-    if(comments.length === 0) commentsList.innerHTML = '<div class="small">No comments yet.</div>';
-    else for(const c of comments){
-      const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml(c.author||'Anonymous')}</strong> <div style="font-size:12px;color:var(--muted-2)">${new Date(c.created_at?.toDate ? c.created_at.toDate() : c.created_at).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(c.text)}</div>`);
-      commentsList.appendChild(item);
+    snap.forEach(d => { comments.push({ id:d.id, ...d.data() }); });
+    if(comments.length === 0) $('#comments-list').innerHTML = '<div class="small">No comments yet.</div>';
+    else {
+      $('#comments-list').innerHTML = '';
+      for(const c of comments){
+        const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml(c.author||'Anonymous')}</strong> <div style="font-size:12px;color:var(--muted-2)">${new Date(c.created_at?.toDate ? c.created_at.toDate() : c.created_at).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(c.text)}</div>`);
+        $('#comments-list').appendChild(item);
+      }
     }
-
-    postBtn.addEventListener('click', async ()=>{
-      const text = ta.value.trim(); if(!text) return alert('Write something');
-      const doc = { text, author: 'Stacy', created_at: firebase.firestore.FieldValue.serverTimestamp() };
-      try{
-        await db.collection('annotations').doc(remoteId).collection('comments').add(doc);
-        ta.value = '';
-        // append locally quickly
-        const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml('Stacy')}</strong> <div style="font-size:12px;color:var(--muted-2)">${(new Date()).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(text)}</div>`);
-        if(commentsList.querySelector('.small')) commentsList.innerHTML = '';
-        commentsList.appendChild(item);
-      }catch(e){ console.error('post comment failed', e); alert('Comment failed'); }
-    });
-
-  }catch(e){ console.error('openCommentPanelFor error', e); alert('Could not open comments'); }
+  }catch(e){ console.error('openCommentModal error', e); $('#comments-list').innerHTML = '<div class="small">Could not load comments.</div>'; }
 }
 
-/* Selection -> char-index mapping utilities */
+$('#post-comment').addEventListener('click', async ()=>{
+  const text = $('#comment-text').value.trim();
+  if(!text) return alert('Write something');
+  if(!currentCommentRemoteId) return alert('No annotation selected.');
+  const doc = { text, author: 'Stacy', created_at: firebase.firestore.FieldValue.serverTimestamp() };
+  try{
+    await db.collection('annotations').doc(currentCommentRemoteId).collection('comments').add(doc);
+    $('#comment-text').value = '';
+    // append locally
+    const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml('Stacy')}</strong> <div style="font-size:12px;color:var(--muted-2)">${(new Date()).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(text)}</div>`);
+    if($('#comments-list').querySelector('.small')) $('#comments-list').innerHTML = '';
+    $('#comments-list').appendChild(item);
+  }catch(e){ console.error('post comment failed', e); alert('Comment failed'); }
+});
 
-/* Walk the text nodes in article and return an array of {node, length} in document order */
+/* selection -> display offset mapping helpers */
 function collectTextNodes(root){
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
   const arr = [];
@@ -451,14 +456,8 @@ function collectTextNodes(root){
   return arr;
 }
 
-/* Convert a DOM Range (inside #article) to a char index relative to the original raw article text.
-   Returns { start, length } or null on failure.
-   Implementation note: buildAnnotatedHtml concatenates raw slices in order, and the text nodes
-   in #article correspond to that produced text (textContent). We therefore compute the start by
-   summing text node lengths up to the range's startContainer and that offset is the same as the
-   raw text index when buildAnnotatedHtml used raw slices in sequence.
-*/
-function charIndexFromRange(range){
+/* convert DOM Range start to display char offset (based on DOM text nodes) */
+function displayOffsetFromRange(range){
   try{
     if(!range) return null;
     const container = document.getElementById('article');
@@ -466,50 +465,73 @@ function charIndexFromRange(range){
     let chars = 0;
     for(const node of nodes){
       if(node === range.startContainer){
-        return { start: chars + range.startOffset, length: range.toString().length };
+        return chars + range.startOffset;
       }
       chars += node.textContent.length;
     }
-    // If startContainer wasn't matched (e.g., selection spans nodes that are non-text),
-    // try to map by finding the first text node that contains the range's start (using compareDocumentPosition)
-    // fallback: try to find node by traversing parents
+    // fallback: walk parents to find nearest text node
     let sc = range.startContainer;
     while(sc && sc !== container){
       if(sc.nodeType === Node.TEXT_NODE){
-        // find its cumulative offset
         chars = 0;
         for(const node of nodes){
-          if(node === sc) { return { start: chars + range.startOffset, length: range.toString().length }; }
+          if(node === sc) return chars + range.startOffset;
           chars += node.textContent.length;
         }
       }
       sc = sc.parentNode;
     }
     return null;
-  }catch(e){ console.warn('charIndexFromRange error', e); return null; }
+  }catch(e){ console.warn('displayOffsetFromRange error', e); return null; }
 }
 
-/* fallback search for string indices (used only if range mapping fails) */
-function findAllIndices(haystack, needle){ const res=[]; if(!needle) return res; let pos=0; while(true){ const idx = haystack.indexOf(needle,pos); if(idx===-1) break; res.push(idx); pos = idx + Math.max(1, needle.length); } return res; }
+/* convert display offset/length to raw start/end using mapping computed earlier */
+function displayToRawRange(displayStart, length){
+  const map = window.current.displayToRawMap || [];
+  const displayText = window.current.displayText || '';
+  if(displayStart === null || displayStart === undefined) return null;
+  const start = Math.max(0, Math.min(displayText.length-1, displayStart));
+  const lastIndex = Math.max(0, Math.min(displayText.length-1, displayStart + length - 1));
+  const rawStart = map[start];
+  const rawEnd = (map[lastIndex] !== undefined) ? (map[lastIndex] + 1) : ( (map[start] !== undefined) ? (map[start] + length) : null );
+  if(rawStart === undefined || rawEnd === undefined || rawEnd <= rawStart) return null;
+  return { start_idx: rawStart, end_idx: rawEnd };
+}
 
-/* helper to convert a char index into a DOM Range (used elsewhere) */
-function domRangeForCharIndex(container, charIndex, length){
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
-  let node; let chars = 0;
-  while(node = walker.nextNode()){
+/* fallback: find indices in displayText (normalized) */
+function findAllIndicesInDisplay(display, needle){
+  const res = [];
+  if(!needle) return res;
+  let pos = 0;
+  while(true){
+    const idx = display.indexOf(needle, pos);
+    if(idx === -1) break;
+    res.push(idx);
+    pos = idx + Math.max(1, needle.length);
+  }
+  return res;
+}
+
+/* DOM range from display char index */
+function domRangeForDisplayIndex(container, displayIndex, length){
+  const nodes = collectTextNodes(container);
+  let chars = 0;
+  const range = document.createRange();
+  for(const node of nodes){
     const next = chars + node.textContent.length;
-    if(charIndex < next){
-      const startOffset = Math.max(0, charIndex - chars);
-      const range = document.createRange();
+    if(displayIndex < next){
+      const startOffset = Math.max(0, displayIndex - chars);
       range.setStart(node, startOffset);
       if(length <= node.textContent.length - startOffset){
         range.setEnd(node, startOffset + length);
         return range;
       }
       let remaining = length - (node.textContent.length - startOffset);
-      // continue
-      let n; const fw = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
-      while((n = fw.nextNode())){ if(n === node) break; }
+      let fw = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+      let n;
+      while((n = fw.nextNode())){
+        if(n === node) break;
+      }
       while((n = fw.nextNode())){
         if(remaining <= n.textContent.length){ range.setEnd(n, remaining); return range; }
         remaining -= n.textContent.length;
@@ -522,91 +544,117 @@ function domRangeForCharIndex(container, charIndex, length){
   return null;
 }
 
-/* distance util for rects */
-function rectDistance(a,b){ const ax=a.left+a.width/2, ay=a.top+a.height/2, bx=b.left+b.width/2, by=b.top+b.height/2; return Math.hypot(ax-bx, ay-by); }
-
+/* compute selection robustly: uses display mapping first, fallback to text search+rect distance */
 const articleEl = document.getElementById('article');
 const annotFab = document.getElementById('annot-fab');
-function hideFab(){ annotFab.style.display='none'; }
-function showFabAtRect(rect){ if(!rect) return hideFab(); const scrollY = window.scrollY || window.pageYOffset; const left = Math.max(8, rect.left + (rect.width/2) - 40); const top = rect.top + scrollY - 44; annotFab.style.left = left + 'px'; annotFab.style.top = top + 'px'; annotFab.style.display = 'block'; }
+const lookupBtn = document.getElementById('lookup-btn');
 
-/* improved selection handling:
-   - try to compute char index directly from DOM selection (charIndexFromRange)
-   - fallback to previous 'findAllIndices' + rect-distance approach
-   - if rect is zero-sized, show fixed FAB instead of hiding it
-*/
-document.addEventListener('selectionchange', onSelectionChange);
-document.addEventListener('pointerup', onSelectionChange); // pointerup helps in some browsers
-function onSelectionChange(){
-  const sel = window.getSelection();
-  const editorOpen = document.getElementById('annotation-editor').style.display === 'block';
-  if(!sel || sel.rangeCount === 0){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
-  const range = sel.getRangeAt(0);
-  const text = sel.toString();
-  if(!text || !window.current.raw){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
-  // try precise mapping first
-  const precise = charIndexFromRange(range);
-  if(precise){
-    // ensure indices are within raw length bounds
-    const start = Math.max(0, Math.min(window.current.raw.length, precise.start));
-    pendingSelection = { start_idx: start, end_idx: Math.min(window.current.raw.length, start + precise.length), text };
-    // bounding rect
-    const selRect = range.getBoundingClientRect();
-    if(selRect && selRect.width>0 && selRect.height>0){
-      if(window.innerWidth < 980){ annotFab.style.position='fixed'; annotFab.style.right='14px'; annotFab.style.bottom='110px'; annotFab.style.left=''; annotFab.style.top=''; annotFab.style.display='block'; }
-      else { annotFab.style.position='absolute'; showFabAtRect(selRect); }
-    } else {
-      // small or zero rect -> fixed fallback
-      annotFab.style.position='fixed'; annotFab.style.right='14px'; annotFab.style.bottom='110px'; annotFab.style.left=''; annotFab.style.top=''; annotFab.style.display='block';
+function hideFabAndLookup(){ annotFab.style.display='none'; lookupBtn.style.display='none'; }
+
+/* position helpers */
+function showFabAtRect(rect){
+  if(!rect) return hideFabAndLookup();
+  const scrollY = window.scrollY || window.pageYOffset;
+  const left = Math.max(8, rect.left + (rect.width/2) - 40);
+  const top = rect.top + scrollY - 44;
+  annotFab.style.left = left + 'px';
+  annotFab.style.top = top + 'px';
+  annotFab.style.display = 'block';
+  // lookup button slightly above
+  lookupBtn.style.left = (left + 80) + 'px';
+  lookupBtn.style.top = (top) + 'px';
+  lookupBtn.style.display = 'block';
+}
+
+/* capture selection into pendingSelection using mapping */
+function captureSelectionFromRange(range){
+  const selText = range.toString();
+  if(!selText || !window.current.raw) return null;
+
+  // try display mapping route
+  const displayStart = displayOffsetFromRange(range);
+  if(displayStart !== null){
+    const dr = displayToRawRange(displayStart, selText.length);
+    if(dr){
+      pendingSelection = { start_idx: dr.start_idx, end_idx: dr.end_idx, text: window.current.raw.slice(dr.start_idx, dr.end_idx) };
+      return pendingSelection;
     }
-    return;
   }
 
-  // fallback: find all indices of the selected text within the raw string (after normalization)
-  const normRaw = normalizeForMatching(window.current.raw);
-  const normText = normalizeForMatching(text);
-  const indices = findAllIndices(normRaw, normText);
-  if(indices.length === 0){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
+  // fallback to searching in displayText (normalized) and choosing nearest rect
+  const displayText = normalizeForMatching(window.current.displayText || '');
+  const needle = normalizeForMatching(selText);
+  const indices = findAllIndicesInDisplay(displayText, needle);
+  if(indices.length === 0) { pendingSelection = null; return null; }
+  // compute best by rect distance
   const selRect = range.getBoundingClientRect();
   let best = null; let bestDist = Infinity;
   for(const idx of indices){
-    const rangeCandidate = domRangeForCharIndex(articleEl, idx, text.length);
-    if(!rangeCandidate) continue;
-    const r = rangeCandidate.getBoundingClientRect();
+    const drange = domRangeForDisplayIndex(articleEl, idx, selText.length);
+    if(!drange) continue;
+    const r = drange.getBoundingClientRect();
     if(!r || (r.width===0 && r.height===0)) continue;
     const d = rectDistance(selRect, r);
-    if(d < bestDist){ bestDist = d; best = { index: idx, range: rangeCandidate, rect: r }; }
+    if(d < bestDist){ bestDist = d; best = { idx, range: drange, rect: r }; }
   }
-  if(!best){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
-  pendingSelection = { start_idx: best.index, end_idx: best.index + text.length, text };
-  if(window.innerWidth < 980){ annotFab.style.position='fixed'; annotFab.style.right='14px'; annotFab.style.bottom='110px'; annotFab.style.left=''; annotFab.style.top=''; annotFab.style.display='block'; }
-  else { annotFab.style.position='absolute'; showFabAtRect(best.rect); }
+  if(!best){ pendingSelection = null; return null; }
+  const rawRange = displayToRawRange(best.idx, selText.length);
+  if(!rawRange){ pendingSelection = null; return null; }
+  pendingSelection = { start_idx: rawRange.start_idx, end_idx: rawRange.end_idx, text: window.current.raw.slice(rawRange.start_idx, rawRange.end_idx) };
+  return pendingSelection;
 }
 
-annotFab.addEventListener('pointerdown', (ev)=>{
-  const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
-  const text = sel.toString(); if(!text || !window.current.raw) return;
-  // update pendingSelection if possible (same logic as above)
+/* rect distance */
+function rectDistance(a,b){ const ax=a.left+a.width/2, ay=a.top+a.height/2, bx=b.left+b.width/2, by=b.top+b.height/2; return Math.hypot(ax-bx, ay-by); }
+
+/* selectionchange logic */
+document.addEventListener('selectionchange', onSelectionChange);
+document.addEventListener('pointerup', onSelectionChange);
+
+function onSelectionChange(){
+  const sel = window.getSelection();
+  const editorOpen = document.getElementById('annotation-editor').style.display === 'block';
+  if(!sel || sel.rangeCount === 0){ if(editorOpen) return; pendingSelection = null; hideFabAndLookup(); return; }
   const range = sel.getRangeAt(0);
-  const precise = charIndexFromRange(range);
-  if(precise){
-    const start = Math.max(0, Math.min(window.current.raw.length, precise.start));
-    pendingSelection = { start_idx: start, end_idx: Math.min(window.current.raw.length, start + precise.length), text };
+  const text = sel.toString();
+  if(!text || !window.current.raw){ if(editorOpen) return; pendingSelection = null; hideFabAndLookup(); return; }
+
+  // try to capture selection
+  const cap = captureSelectionFromRange(range);
+  if(!cap){ if(editorOpen) return; pendingSelection = null; hideFabAndLookup(); return; }
+
+  // compute rect for placement
+  const selRect = range.getBoundingClientRect();
+  if(selRect && selRect.width>0 && selRect.height>0){
+    if(window.innerWidth < 980){ annotFab.style.position='fixed'; lookupBtn.style.position='fixed'; annotateFabFixedPlacement(); }
+    else { annotFab.style.position='absolute'; lookupBtn.style.position='absolute'; showFabAtRect(selRect); }
   } else {
-    const indices = findAllIndices(window.current.raw, text); if(indices.length === 0) return;
-    const selRect = range.getBoundingClientRect();
-    let best=null, bestDist=Infinity;
-    for(const idx of indices){
-      const rrange = domRangeForCharIndex(articleEl, idx, text.length);
-      if(!rrange) continue;
-      const r = rrange.getBoundingClientRect();
-      const d = rectDistance(selRect, r);
-      if(d < bestDist){ bestDist = d; best = { index: idx, rect: r }; }
-    }
-    if(best) pendingSelection = { start_idx: best.index, end_idx: best.index + text.length, text };
+    // fallback to fixed placement if rect is zero-sized (end of doc)
+    annotFab.style.position='fixed'; lookupBtn.style.position='fixed';
+    annotateFabFixedPlacement();
   }
+
+  // Only show lookup button for single-token selections (no whitespace)
+  if(/^\S+$/.test(text.trim())) lookupBtn.style.display = 'block';
+  else lookupBtn.style.display = 'none';
+}
+
+function annotateFabFixedPlacement(){
+  annotFab.style.right = '14px'; annotFab.style.bottom = '110px'; annotFab.style.left = ''; annotFab.style.top = ''; annotFab.style.display='block';
+  lookupBtn.style.right = '14px'; lookupBtn.style.bottom = '150px'; lookupBtn.style.left = ''; lookupBtn.style.top = ''; // slightly above
+  lookupBtn.style.display = 'none'; // become visible if single-token
+}
+
+/* prevent selection loss on FAB click - capture selection on mousedown */
+annotFab.addEventListener('pointerdown', (ev)=>{
+  ev.preventDefault(); // important: prevents selection collapse in many browsers
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount===0) return;
+  const range = sel.getRangeAt(0);
+  captureSelectionFromRange(range);
 });
 
+/* when annotate clicked, open editor. The pointerdown has already captured selection. */
 annotFab.addEventListener('click', ()=>{
   if(!pendingSelection) return alert('No selection.');
   $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,120)}${pendingSelection.text.length>120?'…':''}"`;
@@ -617,12 +665,50 @@ annotFab.addEventListener('click', ()=>{
   $('#annotation-editor').dataset.remoteId = '';
   document.getElementById('right-col').classList.remove('collapsed');
   document.getElementById('right-col').scrollTop = 0;
-  hideFab();
+  hideFabAndLookup();
 });
 
-document.addEventListener('mousedown', (e)=>{ if(e.target === annotFab || annotFab.contains(e.target)) return; const sel = window.getSelection(); if(!sel || sel.toString().trim()==='') hideFab(); });
+/* lookup button handlers: pointerdown prevents selection loss too */
+lookupBtn.addEventListener('pointerdown', (ev)=>{ ev.preventDefault(); });
+lookupBtn.addEventListener('click', ()=>{
+  const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
+  const text = sel.toString().trim();
+  if(!text) return alert('No selection.');
+  // show definition modal
+  lookupDefinition(text);
+  hideFabAndLookup();
+});
 
-/* Firestore helpers for create/update/delete */
+/* dictionary lookup */
+async function lookupDefinition(word){
+  $('#define-content').innerHTML = '<div class="small">Looking up…</div>';
+  $('#define-modal').style.display = 'block';
+  try{
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    if(!res.ok) throw new Error('Not found');
+    const data = await res.json();
+    const entry = data[0] || {};
+    const meanings = entry.meanings || [];
+    let html = `<div style="font-weight:700">${escapeHtml(entry.word||word)} ${entry.phonetics && entry.phonetics[0] ? '('+escapeHtml(entry.phonetics[0].text)+')' : ''}</div>`;
+    if(meanings.length>0){
+      const m = meanings[0];
+      html += `<div style="margin-top:6px;font-size:13px">${escapeHtml(m.partOfSpeech||'')}</div>`;
+      const defs = m.definitions || [];
+      if(defs.length>0){
+        html += `<div style="margin-top:6px">${escapeHtml(defs[0].definition||'')}</div>`;
+        if(defs[0].example) html += `<div class="small" style="margin-top:6px;color:var(--muted-2)">Example: ${escapeHtml(defs[0].example)}</div>`;
+      }
+    } else {
+      html += `<div class="small">No meaning found.</div>`;
+    }
+    $('#define-content').innerHTML = html;
+  }catch(e){
+    $('#define-content').innerHTML = `<div class="small">No definition found for "${escapeHtml(word)}".</div>`;
+  }
+}
+$('#close-define').addEventListener('click', ()=>{ $('#define-modal').style.display='none'; });
+
+/* Firestore helpers */
 async function pushAnnotationToFirestore(payload){
   try{
     const doc = {
@@ -646,45 +732,27 @@ async function updateAnnotationRemote(remoteId, updateObj){
   try{
     await db.collection('annotations').doc(remoteId).update(updateObj);
     return { ok:true };
-  }catch(e){
-    console.warn('updateAnnotationRemote failed', e);
-    return { ok:false, error:e };
-  }
+  }catch(e){ console.warn('updateAnnotationRemote failed', e); return { ok:false, error:e }; }
 }
 
 async function deleteAnnotationRemote(remoteId){
-  try{
-    await db.collection('annotations').doc(remoteId).delete();
-    return { ok:true };
-  }catch(e){
-    console.warn('deleteAnnotationRemote failed', e);
-    return { ok:false, error:e };
-  }
+  try{ await db.collection('annotations').doc(remoteId).delete(); return { ok:true }; }
+  catch(e){ console.warn('deleteAnnotationRemote failed', e); return { ok:false, error:e }; }
 }
 
-/* Save annotation (local optimistic + remote attempt).
-   Edit flow tries update(), falls back to delete+create (preferred A).
-*/
-$('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId=''; window.getSelection().removeAllRanges(); hideFab(); });
+/* Save & edit annotations */
+$('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId=''; window.getSelection().removeAllRanges(); hideFabAndLookup(); });
 
 $('#delete-annotation').addEventListener('click', async ()=>{
   const editingId = $('#annotation-editor').dataset.editing;
   if(!editingId) return alert('No annotation selected for deletion');
   if(!confirm('Delete this annotation?')) return;
   let anns = loadAnnsLocal(window.current.filePath) || [];
-  const annIdx = anns.findIndex(a=> String(a.id) === String(editingId));
-  const ann = anns[annIdx];
-  if(annIdx !== -1){
-    anns.splice(annIdx,1);
-    saveAnnsLocal(window.current.filePath, anns);
-    renderArticleWithAnnotations();
-  }
-  $('#annotation-editor').style.display='none';
-  $('#annotation-editor').dataset.editing='';
-  // remote delete if possible
-  try{
-    if(ann && ann._remoteId) await deleteAnnotationRemote(ann._remoteId);
-  }catch(e){ console.warn('remote delete failed', e); alert('Remote delete failed'); }
+  const idx = anns.findIndex(a=> String(a.id) === String(editingId));
+  const ann = anns[idx];
+  if(idx !== -1){ anns.splice(idx,1); saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
+  $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId='';
+  try{ if(ann && ann._remoteId) await deleteAnnotationRemote(ann._remoteId); }catch(e){ console.warn('remote delete failed', e); alert('Remote delete failed'); }
 });
 
 $('#save-annotation').addEventListener('click', async ()=>{
@@ -695,21 +763,24 @@ $('#save-annotation').addEventListener('click', async ()=>{
   let anns = loadAnnsLocal(window.current.filePath) || [];
 
   // parse possible "Taru " prefix
+  function parseNoteAuthor(rawNote){
+    if(!rawNote) return { note: rawNote, author: undefined };
+    const m = rawNote.match(/^\s*(Taru)\s+(.*)$/i);
+    if(m){ return { note: m[2].trim(), author: m[1] }; }
+    return { note: rawNote, author: undefined };
+  }
   const parsed = parseNoteAuthor(noteRaw);
   const finalNote = parsed.note;
-  const finalAuthor = parsed.author; // undefined if no prefix
+  const finalAuthor = parsed.author;
 
   if(editingId){
-    // EDIT existing: find local copy, update local, then attempt remote update => fallback delete+create
     const idx = anns.findIndex(a=> String(a.id) === String(editingId));
-    if(idx === -1) return alert('Annotation not found locally.');
+    if(idx === -1) return alert('Annotation not found.');
     anns[idx].note = finalNote;
     if(finalAuthor) anns[idx].author = finalAuthor;
     anns[idx].edited_at = nowISO;
-    saveAnnsLocal(window.current.filePath, anns);
-    renderArticleWithAnnotations();
+    saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations();
 
-    // attempt remote update if remote id exists
     try{
       const remoteId = anns[idx]._remoteId;
       if(remoteId){
@@ -717,25 +788,33 @@ $('#save-annotation').addEventListener('click', async ()=>{
         if(finalAuthor) updateObj.author = finalAuthor;
         const upd = await updateAnnotationRemote(remoteId, updateObj);
         if(!upd.ok){
-          // fallback: delete remote and create a fresh remote doc (preserve local id mapping)
-          try{
-            await deleteAnnotationRemote(remoteId);
-          }catch(e){}
+          try{ await deleteAnnotationRemote(remoteId); }catch(e){}
           const newPush = await pushAnnotationToFirestore(anns[idx]);
           if(newPush.ok){ anns[idx]._remoteId = newPush.id; saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
         }
       } else {
-        // no remote id yet — create one
         const res = await pushAnnotationToFirestore(anns[idx]);
         if(res.ok){ anns[idx]._remoteId = res.id; saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
       }
     }catch(e){ console.warn('remote edit failed', e); }
   } else {
-    // CREATE new annotation
+    // create new: ensure we have pendingSelection (pointerdown on FAB should have set it)
     if(!pendingSelection) return alert('Select text first.');
-    // Important change: do NOT attach to first existing identical-text occurrence.
     const startIdx = Math.floor(pendingSelection.start_idx);
     const endIdx = Math.floor(pendingSelection.end_idx);
+
+    // If an annotation already exists with exact same start & end, open editor instead of duplicating
+    const existingExact = anns.find(a => Number(a.start_idx) === startIdx && Number(a.end_idx) === endIdx);
+    if(existingExact){
+      // open editor for that annotation
+      $('#annotation-editor').style.display = 'block';
+      $('#annotation-editor').dataset.editing = existingExact.id;
+      $('#annotation-text').value = existingExact.note || '';
+      $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,120)}${pendingSelection.text.length>120?'…':''}"`;
+      $('#delete-annotation').style.display = 'inline-block';
+      $('#delete-annotation').dataset.remoteId = existingExact._remoteId || '';
+      return;
+    }
 
     const newAnn = {
       id: String(Date.now()) + '-' + Math.floor(Math.random()*9999),
@@ -754,10 +833,10 @@ $('#save-annotation').addEventListener('click', async ()=>{
     else { const loc = loadAnnsLocal(window.current.filePath); const li = loc.find(a=> a.id === newAnn.id); if(li){ li._remoteId = res.id; saveAnnsLocal(window.current.filePath, loc); renderArticleWithAnnotations(); } }
   }
 
-  $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = ''; pendingSelection = null; window.getSelection().removeAllRanges(); hideFab();
+  $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = ''; pendingSelection = null; window.getSelection().removeAllRanges(); hideFabAndLookup();
 });
 
-/* fetch + subscribe */
+/* fetch + realtime */
 async function fetchAnnotationsOnce(filePath){
   if(!filePath) return;
   try{
@@ -797,7 +876,7 @@ function subscribeRealtime(filePath){
   }catch(e){ console.warn('subscribeRealtime error', e); if(pollingFallback) clearInterval(pollingFallback); pollingFallback = setInterval(()=> fetchAnnotationsOnce(filePath), 6000); }
 }
 
-/* highlight click open panel */
+/* highlight click opens annotation list and scrolls */
 document.addEventListener('click', (ev)=>{
   const t = ev.target;
   if(t && t.matches && t.matches('.hl')){
@@ -825,57 +904,25 @@ document.addEventListener('click', (ev)=>{
 $('#collapse-left').addEventListener('click', ()=>{ $('#left-col').classList.toggle('collapsed'); });
 $('#collapse-right').addEventListener('click', ()=>{ $('#right-col').classList.toggle('collapsed'); });
 
-/* dictionary lookup (dictionaryapi.dev) - small popover modal */
-async function lookupDefinition(word){
-  const modal = $('#define-modal');
-  modal.innerHTML = '<div class="small">Looking up…</div>'; modal.style.display='block';
+/* init reading loader */
+async function loadReading(r){
+  const url = r.download_url || `/${r.path}`;
+  $('#post-title').innerText = r.title || r.path.split('/').pop();
+  window.current.filePath = normalizePath(r.path);
   try{
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-    if(!res.ok) throw new Error('Not found');
-    const data = await res.json();
-    // show first entry/meaning
-    const entry = data[0];
-    const meanings = entry.meanings || [];
-    let html = `<div style="font-weight:700">${escapeHtml(entry.word||word)} ${entry.phonetics && entry.phonetics[0] ? '('+escapeHtml(entry.phonetics[0].text)+')' : ''}</div>`;
-    if(meanings.length>0){
-      const m = meanings[0];
-      html += `<div style="margin-top:6px;font-size:13px">${escapeHtml(m.partOfSpeech||'')}</div>`;
-      const defs = m.definitions || [];
-      if(defs.length>0){
-        html += `<div style="margin-top:6px">${escapeHtml(defs[0].definition||'')}</div>`;
-        if(defs[0].example) html += `<div class="small" style="margin-top:6px;color:var(--muted-2)">Example: ${escapeHtml(defs[0].example)}</div>`;
-      }
-    } else {
-      html += `<div class="small">No meaning found.</div>`;
-    }
-    html += `<div style="margin-top:8px"><button class="collapse-btn" id="close-define">Close</button></div>`;
-    modal.innerHTML = html;
-    $('#close-define').addEventListener('click', ()=>{ modal.style.display='none'; });
+    const res = await fetch(url, {cache:'no-store'});
+    if(!res.ok) throw new Error('fetch failed');
+    window.current.raw = await res.text();
+    window.current.title = r.title || r.path.split('/').pop();
+    await fetchAnnotationsOnce(window.current.filePath);
+    renderArticleWithAnnotations();
+    subscribeRealtime(window.current.filePath);
   }catch(e){
-    modal.innerHTML = `<div class="small">No definition found for "${escapeHtml(word)}".</div><div style="margin-top:8px"><button class="collapse-btn" id="close-define">Close</button></div>`;
-    $('#close-define').addEventListener('click', ()=>{ modal.style.display='none'; });
+    $('#article').innerHTML = `<div class="small">Error loading ${escapeHtml(url)}</div>`;
+    console.error('loadReading error', e);
   }
 }
 
-/* hook to provide two-option popover when selecting a single word:
-   If selection is a single word (no spaces) show tiny inline options: Annotate | Define
-   Simpler: reuse the primary FAB; if selection is single token, add quick-define behavior
-*/
-document.addEventListener('dblclick', (e)=>{
-  // on double-click, show define option if selection is single word
-  const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
-  const text = sel.toString().trim();
-  if(!text) return;
-  if(/^\S+$/.test(text)){ // single token
-    // show small define button in the annotate modal via annotate FAB — user can also click Define
-    // We'll show a tiny confirm asking whether to define
-    if(confirm(`Lookup definition for "${text}"? (Cancel to annotate)`)){
-      lookupDefinition(text);
-    }
-  }
-});
-
-/* init */
 function queryParam(name){ const params = new URLSearchParams(window.location.search); return params.get(name); }
 
 async function initApp(){
@@ -892,20 +939,13 @@ async function initApp(){
   else { $('#article').innerHTML = '<div class="small">No readings found in /readings/. Add files or index.json.</div>'; }
 }
 
-/* ---------- NOTES about the "doubling" bug you reported ----------
-I did not change any code specifically to "fix doubling" because the cause isn't 100% certain from the static code:
-Likely causes include:
-- Remote + local duplicate annotations (same span) rendering twice when buildAnnotatedHtml groups not working as expected.
-- start/end indices being computed differently across optimistic/local vs remote-synced lists, producing overlapping spans that produce duplicated visible text.
-- Mutating window.current.raw somewhere outside buildAnnotatedHtml (not present in the provided code), causing annotated html to be generated on top of already-annotated HTML.
+/* Small utility: when user double-clicks, don't use confirm; instead do nothing special (we use lookup button now) */
+document.addEventListener('dblclick', (e)=>{ /* no-op to avoid native lookup/popups */ });
 
-How to debug (if you want this fixed next step):
-1) Open devtools and inspect localStorage key (candle_annot_::<file>) and check the anns array after creating two annotations on same phrase.
-2) Check that `start_idx`/`end_idx` values are valid and distinct (or identical if intended).
-3) Observe #article innerHTML after each save to see whether extra copies of the raw text are present inside the hl span or surrounding text.
-If you'd like I'll instrument the code to log values to console after each save so we can reproduce and then fix confidently.
--------------------------------------------------------------------- */
+/* small safety: if user clicks outside selection, hide the fab/buttons */
+document.addEventListener('mousedown', (e)=>{ if(e.target === annotFab || annotFab.contains(e.target) || e.target === lookupBtn || lookupBtn.contains(e.target)) return; const sel = window.getSelection(); if(!sel || sel.toString().trim()==='') hideFabAndLookup(); });
 
+/* ---------- End of main script ---------- */
 </script>
 </body>
 </html>
