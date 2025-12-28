@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Readings</title>
+<title>Readings (annotator)</title>
 
-<!-- markdown renderer + firebase -->
+<!-- markdown renderer + firebase (compat libs used to keep your existing code shape) -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -19,14 +19,12 @@ h1{margin:0;font-size:16px}
 .app{display:flex;height:calc(100vh - 64px);gap:16px;padding:16px}
 .col{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);Padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);overflow:auto;position:relative}
 .left{width:280px;flex-shrink:0}.center{flex:1;min-width:320px}.right{width:320px;flex-shrink:0}
-/* collapsed state: leave only the collapse icon visible and center it */
 .col.collapsed{width:44px !important;padding:6px !important;overflow:visible !important}
 .col.collapsed .panel-body{display:none}
 .col.collapsed .panel-header .title-wrap{display:none}
 .col.collapsed .panel-header{justify-content:center}
 
 .panel-mini{display:none;font-size:16px}
-/* reading list */
 .reading-item{padding:14px;border-radius:8px;background:var(--glass);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .reading-title{font-weight:600}
 .small{font-size:12px;color:var(--muted-2)}
@@ -39,17 +37,11 @@ h1{margin:0;font-size:16px}
 .annotation-editor{margin-bottom:12px}
 textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
 #annot-fab{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
-/* collapse / icon buttons (gloomy aesthetic) */
 .collapse-btn{background:rgba(255,255,255,0.03);color:var(--muted);border:1px solid rgba(255,255,255,0.02);padding:6px;border-radius:8px;cursor:pointer}
 .collapse-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700;padding:0}
-/* top-of-panel icon placements */
-.panel-header {
-  display:flex;justify-content:space-between;align-items:center;margin-bottom:8px
-}
+.panel-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px }
 .panel-header .title-wrap{display:flex;flex-direction:column}
-/* annotations list styles */
 #annotations-list .ann-group .ann-tabs{margin-bottom:6px}
-/* pw overlay */
 #pw-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.92);z-index:100000}
 #pw-box{width:420px;background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));padding:26px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 20px 80px rgba(0,0,0,0.8);text-align:center}
 #pw-box h3{margin:0 0 8px 0;color:var(--muted);font-size:18px}
@@ -57,12 +49,14 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 #pw-box input{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);margin-top:6px}
 #pw-submit{width:180px;padding:12px;border-radius:10px;border:none;margin-top:12px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;font-weight:700;cursor:pointer}
 
-/* scrollbar (dark theme) */
-/* WebKit */
+.comment-panel{margin-top:8px;border-radius:8px;padding:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)}
+.comment-item{padding:6px;border-radius:6px;margin-bottom:6px;background:rgba(0,0,0,0.02);font-size:13px}
+.comment-input{display:flex;gap:8px;margin-top:8px}
+.comment-input textarea{min-height:56px}
+
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg, rgba(179,107,44,0.18), rgba(179,107,44,0.12));border-radius:10px;border:2px solid rgba(0,0,0,0)}
-/* Firefox */
 *{scrollbar-width:thin;scrollbar-color: rgba(179,107,44,0.18) transparent}
 
 @media (max-width:980px){.app{flex-direction:column;height:calc(100vh - 88px);padding:10px}#annot-fab{position:fixed;right:14px;bottom:90px} }
@@ -72,30 +66,25 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <header>
   <div style="display:flex;gap:12px;align-items:center"><h1>Readings</h1><div class="small">(and also annotating if you wish to)</div></div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <!-- sync status intentionally hidden for cleaner UI -->
-  </div>
+  <div style="display:flex;gap:8px;align-items:center"></div>
 </header>
 
 <div class="app">
   <aside class="col left" id="left-col">
     <div class="panel-header">
       <div class="title-wrap"><div class="small">Primarily just short stories</div><strong style="font-size:15px">Readings</strong></div>
-      <!-- collapse icon inside the panel (moved from header) -->
       <button class="collapse-btn collapse-icon" id="collapse-left" title="Toggle left">O</button>
     </div>
 
     <div class="panel-body">
       <div id="reading-list"><div class="small">Loading…</div></div>
       <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0" />
-      <!-- index path & debug hidden to keep UI clean -->
       <div id="index-json-path" style="display:none;margin-top:6px;color:var(--muted-2)"></div>
       <div id="debug-block" style="display:none"></div>
     </div>
   </aside>
 
   <main class="col center">
-    <!-- simplified header: only title visible -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div><h2 id="post-title" style="margin:4px 0 0 0">Nothing loaded</h2></div>
       <div style="text-align:right"><div id="current-file" class="small" style="display:none">—</div></div>
@@ -106,7 +95,6 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
   <aside class="col right" id="right-col">
     <div class="panel-header">
       <div class="title-wrap"><strong style="font-size:15px">Annotations</strong></div>
-      <!-- collapse icon inside panel -->
       <button class="collapse-btn collapse-icon" id="collapse-right" title="Toggle right">X</button>
     </div>
 
@@ -120,8 +108,9 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="collapse-btn" id="save-annotation">Save</button>
           <button class="collapse-btn" id="cancel-annotation">Cancel</button>
+          <button class="collapse-btn" id="delete-annotation" style="display:none;background:rgba(255,64,64,0.06);color:var(--muted)">Delete</button>
         </div>
-        <div class="small" style="margin-top:8px;color:var(--muted-2)">This will get saved for anyone else to see but you can edit it if you wish.</div>
+        <div class="small" style="margin-top:8px;color:var(--muted-2)">This will get saved for anyone else to see. You can edit or delete it later.</div>
       </div>
 
       <div id="annotations-list"><div class="small">Select text to create an annotation.</div></div>
@@ -142,16 +131,22 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
   </div>
 </div>
 
+<!-- small helper modal for definitions -->
+<div id="define-modal" style="display:none;position:fixed;right:18px;bottom:18px;z-index:200000;background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);max-width:420px;color:var(--muted)"></div>
+
 <script>
 /*
-  Final polish as requested:
-  - collapsing left/right hides all internal text and leaves only the O/X icon centered
-  - password overlay restored to dark backdrop, centered dialog
-  - heading 'Password' and short note text
-  - removed Guest button; Unlock button centered and larger
-  - Enter key on password input triggers unlock
-  - textarea placeholder changed to "write your note"
-  - fixed annotated-text newline handling
+  Rewritten annotator with:
+  - precise char-index mapping from DOM selection -> raw indices (charIndexFromRange)
+  - fab fallback placement for small bounding rects
+  - selection canonicalization improvements
+  - edit: update remote doc, fallback to delete+create
+  - delete button (local + remote)
+  - comments stored under annotations/{id}/comments (subcollection) with inline UI "Comment"
+  - word lookup via dictionaryapi.dev (Define)
+  - careful integration to avoid breaking other flows
+  NOTES:
+  - I did NOT change the "doubling" behaviour you mentioned because I couldn't be absolutely sure of the root cause without live tests. See bottom comments for debugging hints.
 */
 
 /* CONFIG — edit these */
@@ -169,8 +164,6 @@ const FIREBASE_CONFIG = {
 };
 
 
-
-
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 
@@ -179,14 +172,24 @@ const $ = s => document.querySelector(s);
 const el = (t,a={},h='') => { const e = document.createElement(t); Object.assign(e,a); if(h) e.innerHTML = h; return e; };
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
 
-// parse note for special-author prefix (e.g. "Taru ")
+/* canonicalizer for matching (helps avoid smart-quote/newline mismatches) */
+function normalizeForMatching(s){
+  if(s === undefined || s === null) return '';
+  return String(s)
+    .replace(/\r\n/g,'\n')
+    .replace(/\r/g,'\n')
+    .replace(/\u2018|\u2019/g,"'")
+    .replace(/\u201C|\u201D/g,'"')
+    .replace(/\u00A0/g,' ')
+    .replace(/\s+/g,' ');
+}
+
+/* parse note for special-author prefix (e.g. "Taru ") */
 function parseNoteAuthor(rawNote){
-  // If the note starts with "Taru " (allow leading whitespace), treat author as Taru
-  // and remove that prefix from the stored note.
   if(!rawNote) return { note: rawNote, author: undefined };
-  const m = rawNote.match(/^\s*Taru\s+(.*)$/);
+  const m = rawNote.match(/^\s*(Taru)\s+(.*)$/i);
   if(m){
-    return { note: m[1].trim(), author: 'Taru' };
+    return { note: m[2].trim(), author: m[1] };
   }
   return { note: rawNote, author: undefined };
 }
@@ -207,19 +210,17 @@ function hideOverlay(){ $('#pw-overlay').style.display='none'; document.body.sty
 
 if(!isUnlocked()) showOverlay(); else initApp();
 $('#pw-submit').addEventListener('click', ()=>{ if($('#pw-input').value === PASSWORD){ setUnlocked(); hideOverlay(); initApp(); } else alert('Wrong password'); });
-// Enter key triggers unlock
 $('#pw-input').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') $('#pw-submit').click(); });
 
 function normalizePath(p){ if(!p) return p; return p.startsWith('/') ? p.slice(1) : p; }
 
-/* discover readings from index.json (robust) */
+/* discover readings */
 async function discoverReadings(){
   const indexPath = `/${READINGS_PATH}/index.json`;
   try{
     const r = await fetch(indexPath, {cache:'no-store'});
     if(r.ok){
       const arr = await r.json();
-      // support either array of strings or array of objects
       readings = arr.map(item => {
         if(typeof item === 'string') return { path: item, title: item.split('/').pop() };
         return { path: item.path, title: item.title || item.path.split('/').pop(), download_url: item.download_url };
@@ -235,7 +236,6 @@ function renderReadingList(){
   const cont = $('#reading-list'); cont.innerHTML = '';
   readings.forEach(r=>{
     const item = el('div',{className:'reading-item'});
-    // Show only the title centered (no filename or "Open")
     item.innerHTML = `<div style="text-align:center;width:100%"><div class="reading-title">${escapeHtml(r.title)}</div></div>`;
     item.addEventListener('click', ()=> loadReading(r));
     cont.appendChild(item);
@@ -269,11 +269,13 @@ function saveAnnsLocal(fp, arr){ localStorage.setItem(annKeyFor(fp), JSON.string
 
 /* build annotated html (groups by identical start/end so multiple notes attach to same span) */
 function buildAnnotatedHtml(text, anns){
-  anns = (anns || []).slice().sort((a,b)=> (a.start_idx||a.start) - (b.start_idx||b.start));
+  // ensure anns are sorted and numeric
+  anns = (anns || []).slice().sort((a,b)=> (Number(a.start_idx||a.start) - Number(b.start_idx||b.start)));
   const groups = [];
   for(const a of anns){
-    const start = a.start_idx ?? a.start;
-    const end = a.end_idx ?? a.end;
+    const start = Number(a.start_idx ?? a.start);
+    const end = Number(a.end_idx ?? a.end);
+    if(isNaN(start) || isNaN(end) || start < 0 || end < 0 || end <= start) continue;
     const last = groups.length ? groups[groups.length-1] : null;
     if(last && last.start === start && last.end === end) last.items.push(a);
     else groups.push({ start, end, items: [a] });
@@ -287,11 +289,12 @@ function buildAnnotatedHtml(text, anns){
     cursor = g.end;
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
-  // FIXED: proper newline handling (was broken by missing \n in regex)
+  // newline handling
   out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
   return `<p>${out}</p>`;
 }
 
+/* render article + annotations list */
 function renderArticleWithAnnotations(){
   const raw = window.current.raw || '';
   const anns = loadAnnsLocal(window.current.filePath) || [];
@@ -299,15 +302,15 @@ function renderArticleWithAnnotations(){
   renderAnnGroups(anns);
 }
 
-/* render annotation groups: simplified UI — no dates, no delete; author falls back to Stacy */
+/* render annotation groups with tabs & comment button */
 function renderAnnGroups(anns){
   const cont = $('#annotations-list'); cont.innerHTML = '';
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
-  anns = anns.slice().sort((a,b)=> (a.start_idx||a.start) - (b.start_idx||b.start));
+  anns = anns.slice().sort((a,b)=> (Number(a.start_idx||a.start) - Number(b.start_idx||b.start)));
   const groups = [];
   for(const a of anns){
-    const start = a.start_idx ?? a.start;
-    const end = a.end_idx ?? a.end;
+    const start = Number(a.start_idx ?? a.start);
+    const end = Number(a.end_idx ?? a.end);
     const last = groups.length ? groups[groups.length-1] : null;
     if(last && last.start === start && last.end === end) last.items.push(a);
     else groups.push({ start, end, items: [a] });
@@ -321,44 +324,205 @@ function renderAnnGroups(anns){
       const authorLabel = escapeHtml(it.author || 'Stacy');
       const tab = el('button',{className:'ann-tab'}, authorLabel);
       if(idx===0) tab.classList.add('ann-active');
-      tab.addEventListener('click', ()=> {
+      tab.addEventListener('click', async ()=> {
         tabs.querySelectorAll('.ann-tab').forEach(t=>t.classList.remove('ann-active'));
         tab.classList.add('ann-active');
-        body.innerHTML = `${marked.parseInline(it.note||'')}<div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${it.id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${it.id}" data-action="edit">Edit</button></div>`;
+        // body content for selected annotation
+        body.innerHTML = `${marked.parseInline(it.note||'')}<div style="margin-top:8px;display:flex;gap:8px">
+          <button class="collapse-btn" data-id="${it.id}" data-action="jump">Jump</button>
+          <button class="collapse-btn" data-id="${it.id}" data-action="edit">Edit</button>
+          <button class="collapse-btn" data-id="${it._remoteId||''}" data-action="comment">Comment</button>
+          <button class="collapse-btn" data-id="${it.id}" data-action="delete">Delete</button>
+          </div>`;
       });
       tabs.appendChild(tab);
     });
     groupEl.appendChild(tabs);
-    const body = el('div',{}, `${marked.parseInline(g.items[0].note||'')}<div style="margin-top:8px;display:flex;gap:8px"><button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button><button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button></div>`);
+    const body = el('div',{}, `${marked.parseInline(g.items[0].note||'')}<div style="margin-top:8px;display:flex;gap:8px">
+      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button>
+      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button>
+      <button class="collapse-btn" data-id="${g.items[0]._remoteId||''}" data-action="comment">Comment</button>
+      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="delete">Delete</button>
+      </div>`);
     groupEl.appendChild(body);
     cont.appendChild(groupEl);
   });
 
+  // delegate action buttons
   cont.querySelectorAll('[data-action]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
       const anns = loadAnnsLocal(window.current.filePath) || [];
-      const ann = anns.find(a=> String(a.id) === String(id));
-      if(!ann) return alert('Not found');
+      // find by local id first, otherwise try remote id match (comments use remote id)
+      const ann = anns.find(a=> String(a.id) === String(id)) || anns.find(a=> String(a._remoteId) === String(id));
       if(action === 'jump'){
-        const sp = document.querySelector(`[data-ann-ids*="${id}"]`);
+        if(!ann) return alert('Not found');
+        const sp = document.querySelector(`[data-ann-ids*="${ann.id}"]`) || document.querySelector(`[data-start="${ann.start_idx||ann.start}"]`);
         if(sp){ sp.scrollIntoView({behavior:'smooth', block:'center'}); sp.animate([{boxShadow:'0 0 0 rgba(0,0,0,0)'},{boxShadow:'0 10px 40px rgba(179,107,44,0.22)'}],{duration:900}); }
       } else if(action === 'edit'){
-        pendingSelection = { start_idx: ann.start_idx ?? ann.start, end_idx: ann.end_idx ?? ann.end, text: window.current.raw.slice(ann.start_idx ?? ann.start, ann.end_idx ?? ann.end) };
+        if(!ann) return alert('Not found');
+        pendingSelection = { start_idx: Number(ann.start_idx ?? ann.start), end_idx: Number(ann.end_idx ?? ann.end), text: window.current.raw.slice(Number(ann.start_idx ?? ann.start), Number(ann.end_idx ?? ann.end)) };
         $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,90)}${pendingSelection.text.length>90?'…':''}"`;
         $('#annotation-text').value = ann.note || '';
         $('#annotation-editor').style.display = 'block';
         $('#annotation-editor').dataset.editing = ann.id;
-        // ensure right panel expanded when editing
+        $('#delete-annotation').style.display = 'inline-block';
+        // store remote id for deletion if present
+        $('#delete-annotation').dataset.remoteId = ann._remoteId || '';
         document.getElementById('right-col').classList.remove('collapsed');
+      } else if(action === 'comment'){
+        // open comment UI for the given remote id (if no remote id, ask to save first)
+        const remoteId = id;
+        if(!remoteId) return alert('This annotation has not been saved remotely yet. Save first to enable comments.');
+        openCommentPanelFor(remoteId, btn.closest('.ann-group'));
+      } else if(action === 'delete'){
+        if(!ann) return alert('Not found');
+        if(!confirm('Delete this annotation?')) return;
+        // local removal
+        const idx = anns.findIndex(a => String(a.id) === String(ann.id));
+        if(idx !== -1) { anns.splice(idx,1); saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
+        // remote removal
+        try{
+          if(ann._remoteId) await deleteAnnotationRemote(ann._remoteId);
+        }catch(e){ console.warn('remote delete failed', e); alert('Remote delete failed'); }
       }
     });
   });
 }
 
-/* selection helpers */
+/* COMMENTS UI */
+async function openCommentPanelFor(remoteId, anchorEl){
+  // anchorEl is ann-group container; create or toggle a comment panel inside it
+  try{
+    // find existing
+    let panel = anchorEl.querySelector('.comment-panel');
+    if(panel){
+      panel.remove(); return;
+    }
+    panel = el('div',{className:'comment-panel'}, '<div class="small" style="margin-bottom:6px">Comments</div>');
+    const commentsList = el('div',{className:'comments-list'}, '<div class="small">Loading…</div>');
+    panel.appendChild(commentsList);
+
+    const inputWrap = el('div',{className:'comment-input'});
+    const ta = el('textarea',{className:'comment-text', placeholder:'Write a comment...'});
+    ta.style.flex='1';
+    const postBtn = el('button',{className:'collapse-btn'}, 'Post');
+    inputWrap.appendChild(ta); inputWrap.appendChild(postBtn);
+    panel.appendChild(inputWrap);
+    anchorEl.appendChild(panel);
+
+    // fetch comments once
+    const snap = await db.collection('annotations').doc(remoteId).collection('comments').orderBy('created_at','asc').get();
+    const comments = [];
+    snap.forEach(d => { const dd = d.data(); comments.push({ id:d.id, ...dd }); });
+    commentsList.innerHTML = '';
+    if(comments.length === 0) commentsList.innerHTML = '<div class="small">No comments yet.</div>';
+    else for(const c of comments){
+      const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml(c.author||'Anonymous')}</strong> <div style="font-size:12px;color:var(--muted-2)">${new Date(c.created_at?.toDate ? c.created_at.toDate() : c.created_at).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(c.text)}</div>`);
+      commentsList.appendChild(item);
+    }
+
+    postBtn.addEventListener('click', async ()=>{
+      const text = ta.value.trim(); if(!text) return alert('Write something');
+      const doc = { text, author: 'Stacy', created_at: firebase.firestore.FieldValue.serverTimestamp() };
+      try{
+        await db.collection('annotations').doc(remoteId).collection('comments').add(doc);
+        ta.value = '';
+        // append locally quickly
+        const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml('Stacy')}</strong> <div style="font-size:12px;color:var(--muted-2)">${(new Date()).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(text)}</div>`);
+        if(commentsList.querySelector('.small')) commentsList.innerHTML = '';
+        commentsList.appendChild(item);
+      }catch(e){ console.error('post comment failed', e); alert('Comment failed'); }
+    });
+
+  }catch(e){ console.error('openCommentPanelFor error', e); alert('Could not open comments'); }
+}
+
+/* Selection -> char-index mapping utilities */
+
+/* Walk the text nodes in article and return an array of {node, length} in document order */
+function collectTextNodes(root){
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  const arr = [];
+  let n;
+  while(n = walker.nextNode()){
+    arr.push(n);
+  }
+  return arr;
+}
+
+/* Convert a DOM Range (inside #article) to a char index relative to the original raw article text.
+   Returns { start, length } or null on failure.
+   Implementation note: buildAnnotatedHtml concatenates raw slices in order, and the text nodes
+   in #article correspond to that produced text (textContent). We therefore compute the start by
+   summing text node lengths up to the range's startContainer and that offset is the same as the
+   raw text index when buildAnnotatedHtml used raw slices in sequence.
+*/
+function charIndexFromRange(range){
+  try{
+    if(!range) return null;
+    const container = document.getElementById('article');
+    const nodes = collectTextNodes(container);
+    let chars = 0;
+    for(const node of nodes){
+      if(node === range.startContainer){
+        return { start: chars + range.startOffset, length: range.toString().length };
+      }
+      chars += node.textContent.length;
+    }
+    // If startContainer wasn't matched (e.g., selection spans nodes that are non-text),
+    // try to map by finding the first text node that contains the range's start (using compareDocumentPosition)
+    // fallback: try to find node by traversing parents
+    let sc = range.startContainer;
+    while(sc && sc !== container){
+      if(sc.nodeType === Node.TEXT_NODE){
+        // find its cumulative offset
+        chars = 0;
+        for(const node of nodes){
+          if(node === sc) { return { start: chars + range.startOffset, length: range.toString().length }; }
+          chars += node.textContent.length;
+        }
+      }
+      sc = sc.parentNode;
+    }
+    return null;
+  }catch(e){ console.warn('charIndexFromRange error', e); return null; }
+}
+
+/* fallback search for string indices (used only if range mapping fails) */
 function findAllIndices(haystack, needle){ const res=[]; if(!needle) return res; let pos=0; while(true){ const idx = haystack.indexOf(needle,pos); if(idx===-1) break; res.push(idx); pos = idx + Math.max(1, needle.length); } return res; }
-function domRangeForCharIndex(container, charIndex, length){ const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false); let node; let chars = 0; while(node = walker.nextNode()){ const next = chars + node.textContent.length; if(charIndex < next){ const startOffset = Math.max(0, charIndex - chars); const range = document.createRange(); range.setStart(node, startOffset); if(length <= node.textContent.length - startOffset){ range.setEnd(node, startOffset + length); return range; } let remaining = length - (node.textContent.length - startOffset); const fw = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false); let n; while((n = fw.nextNode())){ if(n === node) break; } while((n = fw.nextNode())){ if(remaining <= n.textContent.length){ range.setEnd(n, remaining); return range; } remaining -= n.textContent.length; } range.setEnd(node, node.textContent.length); return range; } chars = next; } return null; }
+
+/* helper to convert a char index into a DOM Range (used elsewhere) */
+function domRangeForCharIndex(container, charIndex, length){
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+  let node; let chars = 0;
+  while(node = walker.nextNode()){
+    const next = chars + node.textContent.length;
+    if(charIndex < next){
+      const startOffset = Math.max(0, charIndex - chars);
+      const range = document.createRange();
+      range.setStart(node, startOffset);
+      if(length <= node.textContent.length - startOffset){
+        range.setEnd(node, startOffset + length);
+        return range;
+      }
+      let remaining = length - (node.textContent.length - startOffset);
+      // continue
+      let n; const fw = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+      while((n = fw.nextNode())){ if(n === node) break; }
+      while((n = fw.nextNode())){
+        if(remaining <= n.textContent.length){ range.setEnd(n, remaining); return range; }
+        remaining -= n.textContent.length;
+      }
+      range.setEnd(node, node.textContent.length);
+      return range;
+    }
+    chars = next;
+  }
+  return null;
+}
+
+/* distance util for rects */
 function rectDistance(a,b){ const ax=a.left+a.width/2, ay=a.top+a.height/2, bx=b.left+b.width/2, by=b.top+b.height/2; return Math.hypot(ax-bx, ay-by); }
 
 const articleEl = document.getElementById('article');
@@ -366,44 +530,81 @@ const annotFab = document.getElementById('annot-fab');
 function hideFab(){ annotFab.style.display='none'; }
 function showFabAtRect(rect){ if(!rect) return hideFab(); const scrollY = window.scrollY || window.pageYOffset; const left = Math.max(8, rect.left + (rect.width/2) - 40); const top = rect.top + scrollY - 44; annotFab.style.left = left + 'px'; annotFab.style.top = top + 'px'; annotFab.style.display = 'block'; }
 
-document.addEventListener('selectionchange', ()=>{
+/* improved selection handling:
+   - try to compute char index directly from DOM selection (charIndexFromRange)
+   - fallback to previous 'findAllIndices' + rect-distance approach
+   - if rect is zero-sized, show fixed FAB instead of hiding it
+*/
+document.addEventListener('selectionchange', onSelectionChange);
+document.addEventListener('pointerup', onSelectionChange); // pointerup helps in some browsers
+function onSelectionChange(){
   const sel = window.getSelection();
   const editorOpen = document.getElementById('annotation-editor').style.display === 'block';
   if(!sel || sel.rangeCount === 0){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
+  const range = sel.getRangeAt(0);
   const text = sel.toString();
   if(!text || !window.current.raw){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
-  const indices = findAllIndices(window.current.raw, text);
+  // try precise mapping first
+  const precise = charIndexFromRange(range);
+  if(precise){
+    // ensure indices are within raw length bounds
+    const start = Math.max(0, Math.min(window.current.raw.length, precise.start));
+    pendingSelection = { start_idx: start, end_idx: Math.min(window.current.raw.length, start + precise.length), text };
+    // bounding rect
+    const selRect = range.getBoundingClientRect();
+    if(selRect && selRect.width>0 && selRect.height>0){
+      if(window.innerWidth < 980){ annotFab.style.position='fixed'; annotFab.style.right='14px'; annotFab.style.bottom='110px'; annotFab.style.left=''; annotFab.style.top=''; annotFab.style.display='block'; }
+      else { annotFab.style.position='absolute'; showFabAtRect(selRect); }
+    } else {
+      // small or zero rect -> fixed fallback
+      annotFab.style.position='fixed'; annotFab.style.right='14px'; annotFab.style.bottom='110px'; annotFab.style.left=''; annotFab.style.top=''; annotFab.style.display='block';
+    }
+    return;
+  }
+
+  // fallback: find all indices of the selected text within the raw string (after normalization)
+  const normRaw = normalizeForMatching(window.current.raw);
+  const normText = normalizeForMatching(text);
+  const indices = findAllIndices(normRaw, normText);
   if(indices.length === 0){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
-  const selRect = sel.getRangeAt(0).getBoundingClientRect();
+  const selRect = range.getBoundingClientRect();
   let best = null; let bestDist = Infinity;
   for(const idx of indices){
-    const range = domRangeForCharIndex(articleEl, idx, text.length);
-    if(!range) continue;
-    const r = range.getBoundingClientRect();
+    const rangeCandidate = domRangeForCharIndex(articleEl, idx, text.length);
+    if(!rangeCandidate) continue;
+    const r = rangeCandidate.getBoundingClientRect();
     if(!r || (r.width===0 && r.height===0)) continue;
     const d = rectDistance(selRect, r);
-    if(d < bestDist){ bestDist = d; best = { index: idx, range, rect: r }; }
+    if(d < bestDist){ bestDist = d; best = { index: idx, range: rangeCandidate, rect: r }; }
   }
   if(!best){ if(editorOpen) return; pendingSelection = null; hideFab(); return; }
   pendingSelection = { start_idx: best.index, end_idx: best.index + text.length, text };
   if(window.innerWidth < 980){ annotFab.style.position='fixed'; annotFab.style.right='14px'; annotFab.style.bottom='110px'; annotFab.style.left=''; annotFab.style.top=''; annotFab.style.display='block'; }
   else { annotFab.style.position='absolute'; showFabAtRect(best.rect); }
-});
+}
 
 annotFab.addEventListener('pointerdown', (ev)=>{
   const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
   const text = sel.toString(); if(!text || !window.current.raw) return;
-  const indices = findAllIndices(window.current.raw, text); if(indices.length === 0) return;
-  const selRect = sel.getRangeAt(0).getBoundingClientRect();
-  let best=null, bestDist=Infinity;
-  for(const idx of indices){
-    const range = domRangeForCharIndex(articleEl, idx, text.length);
-    if(!range) continue;
-    const r = range.getBoundingClientRect();
-    const d = rectDistance(selRect, r);
-    if(d < bestDist){ bestDist = d; best = { index: idx, rect: r }; }
+  // update pendingSelection if possible (same logic as above)
+  const range = sel.getRangeAt(0);
+  const precise = charIndexFromRange(range);
+  if(precise){
+    const start = Math.max(0, Math.min(window.current.raw.length, precise.start));
+    pendingSelection = { start_idx: start, end_idx: Math.min(window.current.raw.length, start + precise.length), text };
+  } else {
+    const indices = findAllIndices(window.current.raw, text); if(indices.length === 0) return;
+    const selRect = range.getBoundingClientRect();
+    let best=null, bestDist=Infinity;
+    for(const idx of indices){
+      const rrange = domRangeForCharIndex(articleEl, idx, text.length);
+      if(!rrange) continue;
+      const r = rrange.getBoundingClientRect();
+      const d = rectDistance(selRect, r);
+      if(d < bestDist){ bestDist = d; best = { index: idx, rect: r }; }
+    }
+    if(best) pendingSelection = { start_idx: best.index, end_idx: best.index + text.length, text };
   }
-  if(best) pendingSelection = { start_idx: best.index, end_idx: best.index + text.length, text };
 });
 
 annotFab.addEventListener('click', ()=>{
@@ -412,6 +613,8 @@ annotFab.addEventListener('click', ()=>{
   $('#annotation-text').value = '';
   $('#annotation-editor').style.display = 'block';
   $('#annotation-editor').dataset.editing = '';
+  $('#delete-annotation').style.display = 'none';
+  $('#annotation-editor').dataset.remoteId = '';
   document.getElementById('right-col').classList.remove('collapsed');
   document.getElementById('right-col').scrollTop = 0;
   hideFab();
@@ -419,7 +622,7 @@ annotFab.addEventListener('click', ()=>{
 
 document.addEventListener('mousedown', (e)=>{ if(e.target === annotFab || annotFab.contains(e.target)) return; const sel = window.getSelection(); if(!sel || sel.toString().trim()==='') hideFab(); });
 
-/* Firestore write helper */
+/* Firestore helpers for create/update/delete */
 async function pushAnnotationToFirestore(payload){
   try{
     const doc = {
@@ -439,8 +642,50 @@ async function pushAnnotationToFirestore(payload){
   }
 }
 
-/* Save annotation (local optimistic + remote attempt) */
-$('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; window.getSelection().removeAllRanges(); hideFab(); });
+async function updateAnnotationRemote(remoteId, updateObj){
+  try{
+    await db.collection('annotations').doc(remoteId).update(updateObj);
+    return { ok:true };
+  }catch(e){
+    console.warn('updateAnnotationRemote failed', e);
+    return { ok:false, error:e };
+  }
+}
+
+async function deleteAnnotationRemote(remoteId){
+  try{
+    await db.collection('annotations').doc(remoteId).delete();
+    return { ok:true };
+  }catch(e){
+    console.warn('deleteAnnotationRemote failed', e);
+    return { ok:false, error:e };
+  }
+}
+
+/* Save annotation (local optimistic + remote attempt).
+   Edit flow tries update(), falls back to delete+create (preferred A).
+*/
+$('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId=''; window.getSelection().removeAllRanges(); hideFab(); });
+
+$('#delete-annotation').addEventListener('click', async ()=>{
+  const editingId = $('#annotation-editor').dataset.editing;
+  if(!editingId) return alert('No annotation selected for deletion');
+  if(!confirm('Delete this annotation?')) return;
+  let anns = loadAnnsLocal(window.current.filePath) || [];
+  const annIdx = anns.findIndex(a=> String(a.id) === String(editingId));
+  const ann = anns[annIdx];
+  if(annIdx !== -1){
+    anns.splice(annIdx,1);
+    saveAnnsLocal(window.current.filePath, anns);
+    renderArticleWithAnnotations();
+  }
+  $('#annotation-editor').style.display='none';
+  $('#annotation-editor').dataset.editing='';
+  // remote delete if possible
+  try{
+    if(ann && ann._remoteId) await deleteAnnotationRemote(ann._remoteId);
+  }catch(e){ console.warn('remote delete failed', e); alert('Remote delete failed'); }
+});
 
 $('#save-annotation').addEventListener('click', async ()=>{
   if(!window.current.filePath) return alert('Open a reading first.');
@@ -455,27 +700,42 @@ $('#save-annotation').addEventListener('click', async ()=>{
   const finalAuthor = parsed.author; // undefined if no prefix
 
   if(editingId){
+    // EDIT existing: find local copy, update local, then attempt remote update => fallback delete+create
     const idx = anns.findIndex(a=> String(a.id) === String(editingId));
-    if(idx === -1) return alert('Annotation not found.');
+    if(idx === -1) return alert('Annotation not found locally.');
     anns[idx].note = finalNote;
     if(finalAuthor) anns[idx].author = finalAuthor;
     anns[idx].edited_at = nowISO;
-    saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations();
+    saveAnnsLocal(window.current.filePath, anns);
+    renderArticleWithAnnotations();
+
+    // attempt remote update if remote id exists
     try{
       const remoteId = anns[idx]._remoteId;
       if(remoteId){
         const updateObj = { note: finalNote, edited_at: nowISO };
         if(finalAuthor) updateObj.author = finalAuthor;
-        await db.collection('annotations').doc(remoteId).update(updateObj);
+        const upd = await updateAnnotationRemote(remoteId, updateObj);
+        if(!upd.ok){
+          // fallback: delete remote and create a fresh remote doc (preserve local id mapping)
+          try{
+            await deleteAnnotationRemote(remoteId);
+          }catch(e){}
+          const newPush = await pushAnnotationToFirestore(anns[idx]);
+          if(newPush.ok){ anns[idx]._remoteId = newPush.id; saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
+        }
+      } else {
+        // no remote id yet — create one
+        const res = await pushAnnotationToFirestore(anns[idx]);
+        if(res.ok){ anns[idx]._remoteId = res.id; saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations(); }
       }
     }catch(e){ console.warn('remote edit failed', e); }
   } else {
+    // CREATE new annotation
     if(!pendingSelection) return alert('Select text first.');
-
-    // If user has previously annotated the *same phrase* elsewhere, prefer to attach to the first existing occurrence
-    const existing = anns.find(a => window.current.raw.slice(a.start_idx ?? a.start, a.end_idx ?? a.end) === pendingSelection.text);
-    const startIdx = existing ? (existing.start_idx ?? existing.start) : Math.floor(pendingSelection.start_idx);
-    const endIdx = existing ? (existing.end_idx ?? existing.end) : Math.floor(pendingSelection.end_idx);
+    // Important change: do NOT attach to first existing identical-text occurrence.
+    const startIdx = Math.floor(pendingSelection.start_idx);
+    const endIdx = Math.floor(pendingSelection.end_idx);
 
     const newAnn = {
       id: String(Date.now()) + '-' + Math.floor(Math.random()*9999),
@@ -561,9 +821,59 @@ document.addEventListener('click', (ev)=>{
   }
 });
 
-/* collapse buttons (now live in sidebars) */
+/* collapse buttons */
 $('#collapse-left').addEventListener('click', ()=>{ $('#left-col').classList.toggle('collapsed'); });
 $('#collapse-right').addEventListener('click', ()=>{ $('#right-col').classList.toggle('collapsed'); });
+
+/* dictionary lookup (dictionaryapi.dev) - small popover modal */
+async function lookupDefinition(word){
+  const modal = $('#define-modal');
+  modal.innerHTML = '<div class="small">Looking up…</div>'; modal.style.display='block';
+  try{
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    if(!res.ok) throw new Error('Not found');
+    const data = await res.json();
+    // show first entry/meaning
+    const entry = data[0];
+    const meanings = entry.meanings || [];
+    let html = `<div style="font-weight:700">${escapeHtml(entry.word||word)} ${entry.phonetics && entry.phonetics[0] ? '('+escapeHtml(entry.phonetics[0].text)+')' : ''}</div>`;
+    if(meanings.length>0){
+      const m = meanings[0];
+      html += `<div style="margin-top:6px;font-size:13px">${escapeHtml(m.partOfSpeech||'')}</div>`;
+      const defs = m.definitions || [];
+      if(defs.length>0){
+        html += `<div style="margin-top:6px">${escapeHtml(defs[0].definition||'')}</div>`;
+        if(defs[0].example) html += `<div class="small" style="margin-top:6px;color:var(--muted-2)">Example: ${escapeHtml(defs[0].example)}</div>`;
+      }
+    } else {
+      html += `<div class="small">No meaning found.</div>`;
+    }
+    html += `<div style="margin-top:8px"><button class="collapse-btn" id="close-define">Close</button></div>`;
+    modal.innerHTML = html;
+    $('#close-define').addEventListener('click', ()=>{ modal.style.display='none'; });
+  }catch(e){
+    modal.innerHTML = `<div class="small">No definition found for "${escapeHtml(word)}".</div><div style="margin-top:8px"><button class="collapse-btn" id="close-define">Close</button></div>`;
+    $('#close-define').addEventListener('click', ()=>{ modal.style.display='none'; });
+  }
+}
+
+/* hook to provide two-option popover when selecting a single word:
+   If selection is a single word (no spaces) show tiny inline options: Annotate | Define
+   Simpler: reuse the primary FAB; if selection is single token, add quick-define behavior
+*/
+document.addEventListener('dblclick', (e)=>{
+  // on double-click, show define option if selection is single word
+  const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
+  const text = sel.toString().trim();
+  if(!text) return;
+  if(/^\S+$/.test(text)){ // single token
+    // show small define button in the annotate modal via annotate FAB — user can also click Define
+    // We'll show a tiny confirm asking whether to define
+    if(confirm(`Lookup definition for "${text}"? (Cancel to annotate)`)){
+      lookupDefinition(text);
+    }
+  }
+});
 
 /* init */
 function queryParam(name){ const params = new URLSearchParams(window.location.search); return params.get(name); }
@@ -581,6 +891,21 @@ async function initApp(){
   if(readings.length > 0) loadReading(readings[0]);
   else { $('#article').innerHTML = '<div class="small">No readings found in /readings/. Add files or index.json.</div>'; }
 }
+
+/* ---------- NOTES about the "doubling" bug you reported ----------
+I did not change any code specifically to "fix doubling" because the cause isn't 100% certain from the static code:
+Likely causes include:
+- Remote + local duplicate annotations (same span) rendering twice when buildAnnotatedHtml groups not working as expected.
+- start/end indices being computed differently across optimistic/local vs remote-synced lists, producing overlapping spans that produce duplicated visible text.
+- Mutating window.current.raw somewhere outside buildAnnotatedHtml (not present in the provided code), causing annotated html to be generated on top of already-annotated HTML.
+
+How to debug (if you want this fixed next step):
+1) Open devtools and inspect localStorage key (candle_annot_::<file>) and check the anns array after creating two annotations on same phrase.
+2) Check that `start_idx`/`end_idx` values are valid and distinct (or identical if intended).
+3) Observe #article innerHTML after each save to see whether extra copies of the raw text are present inside the hl span or surrounding text.
+If you'd like I'll instrument the code to log values to console after each save so we can reproduce and then fix confidently.
+-------------------------------------------------------------------- */
+
 </script>
 </body>
 </html>
