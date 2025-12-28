@@ -28,7 +28,7 @@ h1{margin:0;font-size:16px}
 .reading-item{padding:14px;border-radius:8px;background:var(--glass);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .reading-title{font-weight:600}
 .small{font-size:12px;color:var(--muted-2)}
-#article{line-height:1.6;color:var(--muted);padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);outline:none}
+#article{line-height:1.6;color:var(--muted);padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);outline:none; -webkit-touch-callout:none; -webkit-user-select:text; user-select:text; -moz-user-select:text;}
 .hl{background:var(--highlight);border-radius:4px;padding:0 2px;cursor:pointer}
 .ann-group{margin-bottom:12px;border-radius:8px;padding:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)}
 .ann-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
@@ -154,13 +154,13 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <script>
 /*
-  Implemented fixes A-F:
-  A) Accurate display->raw mapping (displayToRawMap) to avoid index shift
-  B) FAB pointerdown prevents selection loss and reliably captures selection
-  C) Comments are handled in a persistent modal (not inline) to avoid disappearing after re-render
-  D) Lookup UI: "Look up" button next to Annotate for single-word selections; opaque define modal
-  E) Fallback string-match only used when mapping fails; normalized
-  F) Prevent exact-duplicate annotations for same start/end (open editor instead)
+  Fix summary:
+  - Rewrote displayOffsetFromRange to compute offset robustly using Range setStart( article, 0 )
+  - Fixed displayToRawRange clamping and added nearest-mapping fallback
+  - Hardened domRangeForDisplayIndex
+  - Prevented native lookup callout: CSS + contextmenu preventDefault on #article
+  - Ensured pendingSelection is reliably captured on pointerdown of FAB
+  - Made comment modal persistent and safe from accidental clearing during re-renders
 */
 
 const PASSWORD = "Stacy"; // change this
@@ -299,7 +299,7 @@ function buildAnnotatedHtml(text, anns){
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
 
-  // Convert newlines in the resulting escaped text to paragraphs/line breaks like previously
+  // Convert newlines in the resulting escaped text to paragraphs/line breaks
   out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
   return `<p>${out}</p>`;
 }
@@ -344,8 +344,17 @@ function renderAnnGroups(anns){
   groups.forEach(g=>{
     const excerpt = window.current.raw.slice(g.start, g.end);
     const groupEl = el('div',{className:'ann-group'});
+
     groupEl.appendChild(el('div',{}, `<div class="small" style="margin-bottom:8px"><em>Excerpt:</em> "${escapeHtml(excerpt.slice(0,200))}${excerpt.length>200?'…':''}"</div>`));
+
     const tabs = el('div',{className:'ann-tabs'});
+    const body = el('div',{}, `${marked.parseInline(g.items[0].note||'')}<div style="margin-top:8px;display:flex;gap:8px">
+      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button>
+      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button>
+      <button class="collapse-btn" data-id="${g.items[0]._remoteId||''}" data-action="comment">Comment</button>
+      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="delete">Delete</button>
+      </div>`);
+
     g.items.forEach((it, idx)=>{
       const authorLabel = escapeHtml(it.author || 'Stacy');
       const tab = el('button',{className:'ann-tab'}, authorLabel);
@@ -362,19 +371,15 @@ function renderAnnGroups(anns){
       });
       tabs.appendChild(tab);
     });
+
     groupEl.appendChild(tabs);
-    const body = el('div',{}, `${marked.parseInline(g.items[0].note||'')}<div style="margin-top:8px;display:flex;gap:8px">
-      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button>
-      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button>
-      <button class="collapse-btn" data-id="${g.items[0]._remoteId||''}" data-action="comment">Comment</button>
-      <button class="collapse-btn" data-id="${g.items[0].id}" data-action="delete">Delete</button>
-      </div>`);
     groupEl.appendChild(body);
     cont.appendChild(groupEl);
   });
 
+  // wire up buttons in the newly rendered groups (delegated approach would be fine too)
   cont.querySelectorAll('[data-action]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
+    btn.addEventListener('click', async (ev)=>{
       const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
       const anns = loadAnnsLocal(window.current.filePath) || [];
       const ann = anns.find(a=> String(a.id) === String(id)) || anns.find(a => String(a._remoteId) === String(id));
@@ -438,7 +443,6 @@ $('#post-comment').addEventListener('click', async ()=>{
   try{
     await db.collection('annotations').doc(currentCommentRemoteId).collection('comments').add(doc);
     $('#comment-text').value = '';
-    // append locally
     const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml('Stacy')}</strong> <div style="font-size:12px;color:var(--muted-2)">${(new Date()).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(text)}</div>`);
     if($('#comments-list').querySelector('.small')) $('#comments-list').innerHTML = '';
     $('#comments-list').appendChild(item);
@@ -446,43 +450,37 @@ $('#post-comment').addEventListener('click', async ()=>{
 });
 
 /* selection -> display offset mapping helpers */
-function collectTextNodes(root){
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-  const arr = [];
-  let n;
-  while(n = walker.nextNode()){
-    arr.push(n);
-  }
-  return arr;
-}
 
-/* convert DOM Range start to display char offset (based on DOM text nodes) */
+/* convert DOM Range start to display char offset robustly using Range text length from container start */
 function displayOffsetFromRange(range){
   try{
     if(!range) return null;
     const container = document.getElementById('article');
-    const nodes = collectTextNodes(container);
-    let chars = 0;
-    for(const node of nodes){
-      if(node === range.startContainer){
-        return chars + range.startOffset;
-      }
-      chars += node.textContent.length;
-    }
-    // fallback: walk parents to find nearest text node
-    let sc = range.startContainer;
-    while(sc && sc !== container){
-      if(sc.nodeType === Node.TEXT_NODE){
-        chars = 0;
-        for(const node of nodes){
-          if(node === sc) return chars + range.startOffset;
-          chars += node.textContent.length;
+    if(!container.contains(range.startContainer)) return null;
+    // Create a helper range from the start of the article content to the range start,
+    // then use its toString().length as the display offset. This correctly handles
+    // both text nodes and element containers because Range#setEnd accepts element+childIndex.
+    const r = document.createRange();
+    r.setStart(container, 0);
+    try {
+      r.setEnd(range.startContainer, range.startOffset);
+    } catch(e){
+      // if setEnd fails (rare), fallback to iterating text nodes
+      const nodes = collectTextNodes(container);
+      let chars = 0;
+      for(const node of nodes){
+        if(node === range.startContainer){
+          return chars + range.startOffset;
         }
+        chars += node.textContent.length;
       }
-      sc = sc.parentNode;
+      return null;
     }
+    return r.toString().length;
+  }catch(e){
+    console.warn('displayOffsetFromRange error', e);
     return null;
-  }catch(e){ console.warn('displayOffsetFromRange error', e); return null; }
+  }
 }
 
 /* convert display offset/length to raw start/end using mapping computed earlier */
@@ -490,10 +488,31 @@ function displayToRawRange(displayStart, length){
   const map = window.current.displayToRawMap || [];
   const displayText = window.current.displayText || '';
   if(displayStart === null || displayStart === undefined) return null;
-  const start = Math.max(0, Math.min(displayText.length-1, displayStart));
-  const lastIndex = Math.max(0, Math.min(displayText.length-1, displayStart + length - 1));
-  const rawStart = map[start];
-  const rawEnd = (map[lastIndex] !== undefined) ? (map[lastIndex] + 1) : ( (map[start] !== undefined) ? (map[start] + length) : null );
+  // clamp start to [0, displayText.length]
+  const start = Math.max(0, Math.min(displayText.length, displayStart));
+  // compute last index (character index) we intend to cover
+  const lastIndexUnclamped = displayStart + Math.max(0, length) - 1;
+  const lastIndex = Math.max(0, Math.min(displayText.length - 1, lastIndexUnclamped));
+  // find raw mapping for start - if undefined, search forward for the next defined mapping
+  let rawStart = map[start];
+  if(rawStart === undefined){
+    // search forward up to a small window
+    let found = false;
+    for(let i = start+1; i < Math.min(map.length, start + 8); i++){
+      if(map[i] !== undefined){ rawStart = map[i]; found = true; break; }
+    }
+    if(!found){
+      for(let i = start-1; i >= Math.max(0, start-8); i--){
+        if(map[i] !== undefined){ rawStart = map[i]; break; }
+      }
+    }
+  }
+  const rawEndBase = map[lastIndex];
+  let rawEnd;
+  if(rawEndBase !== undefined) rawEnd = rawEndBase + 1;
+  else if(rawStart !== undefined) rawEnd = rawStart + length;
+  else rawEnd = undefined;
+
   if(rawStart === undefined || rawEnd === undefined || rawEnd <= rawStart) return null;
   return { start_idx: rawStart, end_idx: rawEnd };
 }
@@ -522,20 +541,24 @@ function domRangeForDisplayIndex(container, displayIndex, length){
     if(displayIndex < next){
       const startOffset = Math.max(0, displayIndex - chars);
       range.setStart(node, startOffset);
+      // fill end
       if(length <= node.textContent.length - startOffset){
         range.setEnd(node, startOffset + length);
         return range;
       }
       let remaining = length - (node.textContent.length - startOffset);
-      let fw = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+      let reachedStartNode = false;
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
       let n;
-      while((n = fw.nextNode())){
-        if(n === node) break;
-      }
-      while((n = fw.nextNode())){
+      while((n = walker.nextNode())){
+        if(!reachedStartNode){
+          if(n === node) reachedStartNode = true;
+          continue;
+        }
         if(remaining <= n.textContent.length){ range.setEnd(n, remaining); return range; }
         remaining -= n.textContent.length;
       }
+      // if we get here, end at the last text node
       range.setEnd(node, node.textContent.length);
       return range;
     }
@@ -573,7 +596,7 @@ function captureSelectionFromRange(range){
 
   // try display mapping route
   const displayStart = displayOffsetFromRange(range);
-  if(displayStart !== null){
+  if(displayStart !== null && displayStart !== undefined){
     const dr = displayToRawRange(displayStart, selText.length);
     if(dr){
       pendingSelection = { start_idx: dr.start_idx, end_idx: dr.end_idx, text: window.current.raw.slice(dr.start_idx, dr.end_idx) };
@@ -606,6 +629,16 @@ function captureSelectionFromRange(range){
 
 /* rect distance */
 function rectDistance(a,b){ const ax=a.left+a.width/2, ay=a.top+a.height/2, bx=b.left+b.width/2, by=b.top+b.height/2; return Math.hypot(ax-bx, ay-by); }
+
+function collectTextNodes(root){
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  const arr = [];
+  let n;
+  while(n = walker.nextNode()){
+    arr.push(n);
+  }
+  return arr;
+}
 
 /* selectionchange logic */
 document.addEventListener('selectionchange', onSelectionChange);
@@ -647,7 +680,7 @@ function annotateFabFixedPlacement(){
 
 /* prevent selection loss on FAB click - capture selection on mousedown */
 annotFab.addEventListener('pointerdown', (ev)=>{
-  ev.preventDefault(); // important: prevents selection collapse in many browsers
+  ev.preventDefault(); // prevents selection collapse
   const sel = window.getSelection();
   if(!sel || sel.rangeCount===0) return;
   const range = sel.getRangeAt(0);
@@ -941,6 +974,9 @@ async function initApp(){
 
 /* Small utility: when user double-clicks, don't use confirm; instead do nothing special (we use lookup button now) */
 document.addEventListener('dblclick', (e)=>{ /* no-op to avoid native lookup/popups */ });
+
+/* prevent native contextmenu/lookup from appearing on article (so the explicit "Look up" button is the only behavior) */
+$('#article').addEventListener('contextmenu', (e)=>{ e.preventDefault(); });
 
 /* small safety: if user clicks outside selection, hide the fab/buttons */
 document.addEventListener('mousedown', (e)=>{ if(e.target === annotFab || annotFab.contains(e.target) || e.target === lookupBtn || lookupBtn.contains(e.target)) return; const sel = window.getSelection(); if(!sel || sel.toString().trim()==='') hideFabAndLookup(); });
