@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Readings</title>
+<title>Readings (annotator)</title>
 
 <!-- markdown renderer + firebase (compat libs kept) -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -38,7 +38,7 @@ h1{margin:0;font-size:16px}
 textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
 /* Annotate FAB */
 #annot-fab{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
-/* Lookup button: made same look as Annotate (same size/shape/color) */
+/* Lookup button matched */
 #lookup-btn{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
 .collapse-btn{background:rgba(255,255,255,0.03);color:var(--muted);border:1px solid rgba(255,255,255,0.02);padding:6px;border-radius:8px;cursor:pointer}
 .collapse-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700;padding:0}
@@ -149,11 +149,12 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <script>
 /*
-  Preservation of comment drafts fix:
-  - commentDrafts stored per file and remoteId (localStorage + in-memory)
-  - on textarea input save draft
-  - before re-render capture focused comment textarea + selection, after re-render restore value, focus, selection
-  - when comment posted, clear the draft
+  Fix for comment flicker:
+  - Introduced commentCache with status/lastFetched to avoid refetching too often
+  - Delayed loading indicator (200ms) so quick fetches won't flash "Loading..."
+  - Render uses cached items when available; only update DOM when content actually changes
+  - Draft persistence + caret restore retained from prior fix
+  - Kept UI and core logic intact, minimal change to behavior besides caching/debounce to prevent flicker
 */
 
 const PASSWORD = "Stacy"; // change this
@@ -202,43 +203,23 @@ window.current.displayText = '';     // the flattened display text (raw without 
 let openCommentFor = null;
 
 // comment drafts map: { "<file>::<remoteId>": { value, selStart, selEnd } }
-// also persisted to localStorage for resilience
 const DRAFT_PREFIX = 'candle_comment_draft::';
 const commentDrafts = {}; // in-memory cache
-
-function draftKey(remoteId){
-  const fp = window.current.filePath || 'unknown';
-  return `${DRAFT_PREFIX}${fp}::${remoteId}`;
-}
-
+function draftKey(remoteId){ const fp = window.current.filePath || 'unknown'; return `${DRAFT_PREFIX}${fp}::${remoteId}`; }
 function saveDraftToStorage(remoteId, value, selStart, selEnd){
-  try{
-    const key = draftKey(remoteId);
-    const payload = { value: value || '', selStart: selStart ?? null, selEnd: selEnd ?? null, updated: Date.now() };
-    localStorage.setItem(key, JSON.stringify(payload));
-    commentDrafts[key] = payload;
-  }catch(e){ console.warn('saveDraftToStorage failed', e); }
+  try{ const key = draftKey(remoteId); const payload = { value: value || '', selStart: selStart ?? null, selEnd: selEnd ?? null, updated: Date.now() }; localStorage.setItem(key, JSON.stringify(payload)); commentDrafts[key] = payload; }catch(e){ console.warn('saveDraftToStorage failed', e); }
 }
-
 function loadDraftFromStorage(remoteId){
-  try{
-    const key = draftKey(remoteId);
-    if(commentDrafts[key]) return commentDrafts[key];
-    const raw = localStorage.getItem(key);
-    if(!raw) return { value: '', selStart: null, selEnd: null };
-    const parsed = JSON.parse(raw);
-    commentDrafts[key] = parsed;
-    return parsed;
-  }catch(e){ console.warn('loadDraftFromStorage failed', e); return { value: '', selStart: null, selEnd: null }; }
+  try{ const key = draftKey(remoteId); if(commentDrafts[key]) return commentDrafts[key]; const raw = localStorage.getItem(key); if(!raw) return { value: '', selStart: null, selEnd: null }; const parsed = JSON.parse(raw); commentDrafts[key] = parsed; return parsed; }catch(e){ console.warn('loadDraftFromStorage failed', e); return { value: '', selStart: null, selEnd: null }; }
 }
+function clearDraft(remoteId){ try{ const key = draftKey(remoteId); localStorage.removeItem(key); delete commentDrafts[key]; }catch(e){ console.warn('clearDraft failed', e); } }
 
-function clearDraft(remoteId){
-  try{
-    const key = draftKey(remoteId);
-    localStorage.removeItem(key);
-    delete commentDrafts[key];
-  }catch(e){ console.warn('clearDraft failed', e); }
-}
+/* comment cache to avoid flicker and repeated fetches */
+const commentCache = {}; // remoteId -> { status: 'idle'|'loading'|'loaded'|'error', items: [], lastFetched: number, lastRenderedHash: string }
+const loadingTimers = {}; // remoteId -> timerId
+
+/* helper: compare arrays quickly */
+function itemsHash(items){ try{ return JSON.stringify(items.map(i=> [i.author||'', i.text||''])); }catch(e){ return String(items.length); } }
 
 /* password overlay */
 function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; }catch(e){return false;} }
@@ -295,7 +276,6 @@ function buildDisplayMapping(raw){
 
 /* build annotated HTML (uses raw indices for spans) */
 function buildAnnotatedHtml(text, anns){
-  // sanitize and ensure numeric start/end
   anns = (anns || []).slice().map(a => {
     const s = Number(a.start_idx ?? a.start);
     const e = Number(a.end_idx ?? a.end);
@@ -303,7 +283,6 @@ function buildAnnotatedHtml(text, anns){
   }).filter(a => !isNaN(a.start_idx) && !isNaN(a.end_idx) && a.end_idx > a.start_idx)
     .sort((a,b)=> a.start_idx - b.start_idx);
 
-  // dedupe exact same start/end (keep first)
   const seen = new Set();
   const filtered = [];
   for(const a of anns){
@@ -313,7 +292,6 @@ function buildAnnotatedHtml(text, anns){
     filtered.push(a);
   }
 
-  // groups by identical start/end so that multiple notes on same span are grouped
   const groups = [];
   for(const a of filtered){
     const start = a.start_idx;
@@ -323,7 +301,6 @@ function buildAnnotatedHtml(text, anns){
     else groups.push({ start, end, items: [a] });
   }
 
-  // Build output by iterating raw string slices and injecting spans at start/end
   let out = '', cursor = 0;
   for(const g of groups){
     if(g.start > cursor) out += escapeHtml(text.slice(cursor, g.start));
@@ -333,8 +310,6 @@ function buildAnnotatedHtml(text, anns){
     cursor = g.end;
   }
   if(cursor < text.length) out += escapeHtml(text.slice(cursor));
-
-  // Convert newlines in the resulting escaped text to paragraphs/line breaks
   out = out.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
   return `<p>${out}</p>`;
 }
@@ -344,58 +319,39 @@ function captureActiveCommentState(){
   try{
     const active = document.activeElement;
     if(!active) return null;
-    // pattern: id="comment-input-<remoteId>"
     const m = active.id ? active.id.match(/^comment-input-(.+)$/) : null;
     if(!m) return null;
     const remoteId = m[1];
-    return {
-      remoteId,
-      selStart: active.selectionStart ?? null,
-      selEnd: active.selectionEnd ?? null,
-      scrollTop: active.scrollTop ?? 0
-    };
-  }catch(e){
-    return null;
-  }
+    return { remoteId, selStart: active.selectionStart ?? null, selEnd: active.selectionEnd ?? null, scrollTop: active.scrollTop ?? 0 };
+  }catch(e){ return null; }
 }
-
 function restoreActiveCommentState(state){
   if(!state) return;
   const id = `comment-input-${state.remoteId}`;
   const ta = document.getElementById(id);
   if(!ta) return;
-  // restore value from draft (ensures value is up-to-date), then restore selection & focus
   const d = loadDraftFromStorage(state.remoteId);
-  if(d && typeof d.value === 'string'){
-    ta.value = d.value;
-  }
+  if(d && typeof d.value === 'string') ta.value = d.value;
   ta.focus();
-  try{
-    if(state.selStart !== null && state.selEnd !== null) ta.setSelectionRange(state.selStart, state.selEnd);
-  }catch(e){}
+  try{ if(state.selStart !== null && state.selEnd !== null) ta.setSelectionRange(state.selStart, state.selEnd); }catch(e){}
   ta.scrollTop = state.scrollTop ?? 0;
 }
 
 /* render article and compute display->raw mapping for later accurate conversions
-   now captures active comment state before re-render and restores afterwards */
+   captures active comment state and restores after render */
 function renderArticleWithAnnotations(){
   const preState = captureActiveCommentState();
   const raw = window.current.raw || '';
-  // build display mapping first and store it on window.current
   const mapping = buildDisplayMapping(raw);
   window.current.displayText = mapping.displayText;
   window.current.displayToRawMap = mapping.displayToRawMap;
-
   const anns = loadAnnsLocal(window.current.filePath) || [];
   $('#article').innerHTML = buildAnnotatedHtml(raw, anns);
-
-  // now render annotation groups and then restore active comment focus/selection
   renderAnnGroups(anns);
-  // small timeout to allow DOM to settle
   setTimeout(()=>{ restoreActiveCommentState(preState); }, 40);
 }
 
-/* local storage helpers */
+/* local storage helpers for annotations */
 const STORAGE_PREFIX = 'candle_annot_';
 function annKeyFor(fp){ return STORAGE_PREFIX + 'anns::' + fp; }
 function loadAnnsLocal(fp){ try{ const s = localStorage.getItem(annKeyFor(fp)); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
@@ -409,8 +365,9 @@ function parseTaruPrefix(raw){
   return { text: raw, author: undefined };
 }
 
-/* render annotation groups - now includes inline comment area.
-   Wiring for comment inputs includes saving drafts on input and preserving drafts on re-render. */
+/* Render annotation groups with inline comment area.
+   Uses commentCache to avoid flicker.
+*/
 function renderAnnGroups(anns){
   const cont = $('#annotations-list'); cont.innerHTML = '';
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
@@ -418,7 +375,6 @@ function renderAnnGroups(anns){
         .filter(a => !isNaN(a.start_idx) && !isNaN(a.end_idx) && a.end_idx > a.start_idx)
         .sort((a,b)=> a.start_idx - b.start_idx);
 
-  // group
   const groups = [];
   for(const a of anns){
     const start = a.start_idx;
@@ -460,22 +416,49 @@ function renderAnnGroups(anns){
     groupEl.appendChild(tabs);
     groupEl.appendChild(body);
 
-    // Inline comment area (initially hidden unless openCommentFor matches)
+    // Inline comment area
     const remoteId = g.items[0]._remoteId || g.items[0].id;
     const commentBlock = el('div',{className:'comment-block', id:`comments-for-${remoteId}`, style: openCommentFor === remoteId ? '' : 'display:none'});
-    // label showing which annotation it's for
+
     commentBlock.appendChild(el('div',{className:'small', style:'margin-bottom:8px;font-weight:600'}, `Commenting on: "${escapeHtml(excerpt.slice(0,120))}${excerpt.length>120?'…':''}"`));
-    // comments list container
-    const commentsList = el('div',{className:'comments-list', id:`comments-list-${remoteId}`}, `<div class="small">Loading comments…</div>`);
+
+    const commentsList = el('div',{className:'comments-list', id:`comments-list-${remoteId}`});
+
+    // smart initial content: use cache when available, avoid showing Loading unless fetch takes long
+    const cache = commentCache[remoteId];
+    if(cache && cache.status === 'loaded' && cache.items && cache.items.length > 0){
+      commentsList.innerHTML = '';
+      cache.items.forEach(c => {
+        const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(c.author||'Anonymous')}</div><div style="margin-top:6px">${escapeHtml(c.text||'')}</div>`);
+        commentsList.appendChild(item);
+      });
+    } else if(cache && cache.status === 'loaded' && cache.items && cache.items.length === 0){
+      // show "No comments yet." (do not flash Loading)
+      commentsList.innerHTML = '<div class="small">No comments yet.</div>';
+    } else if(cache && cache.status === 'loading'){
+      // if loading but we have previous items, show them; otherwise show nothing (avoid flicker)
+      if(cache.items && cache.items.length > 0){
+        commentsList.innerHTML = '';
+        cache.items.forEach(c => {
+          const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(c.author||'Anonymous')}</div><div style="margin-top:6px">${escapeHtml(c.text||'')}</div>`);
+          commentsList.appendChild(item);
+        });
+      } else {
+        commentsList.innerHTML = '<div class="small">No comments yet.</div>';
+      }
+    } else {
+      // no cache: show "No comments yet." by default (prevents flicker). We'll fetch below with delayed loading indicator.
+      commentsList.innerHTML = '<div class="small">No comments yet.</div>';
+    }
+
     commentBlock.appendChild(commentsList);
+
     // input row
     const inputRow = el('div',{className:'comment-input'});
     const textarea = el('textarea',{id:`comment-input-${remoteId}`, placeholder:'Write a comment...'});
-    // load draft if present
     try{
       const d = loadDraftFromStorage(remoteId);
       if(d && typeof d.value === 'string' && d.value.length) textarea.value = d.value;
-      // restore selection if available slightly later (done by restoreActiveCommentState)
     }catch(e){}
     inputRow.appendChild(textarea);
     const postBtn = el('button',{className:'collapse-btn', id:`post-comment-${remoteId}`, 'data-remote-id': remoteId}, 'Post');
@@ -483,11 +466,10 @@ function renderAnnGroups(anns){
     commentBlock.appendChild(inputRow);
 
     groupEl.appendChild(commentBlock);
-
     cont.appendChild(groupEl);
   });
 
-  // wire up action buttons in groups
+  // wire up action buttons
   cont.querySelectorAll('[data-action]').forEach(btn=>{
     btn.addEventListener('click', async (ev)=>{
       const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
@@ -508,10 +490,9 @@ function renderAnnGroups(anns){
         $('#delete-annotation').dataset.remoteId = ann._remoteId || '';
         document.getElementById('right-col').classList.remove('collapsed');
       } else if(action === 'comment'){
-        const remoteId = id; // ensure this is remote id or fall back to id
+        const remoteId = id;
         const targetAnn = anns.find(a => (a._remoteId && String(a._remoteId) === String(remoteId)) || String(a.id) === String(remoteId));
         if(targetAnn && !targetAnn._remoteId) return alert('This annotation has not been saved remotely yet. Save first to enable comments.');
-        // set as open comment group, re-render to make comment block visible and then fetch comments
         openCommentFor = remoteId;
         renderAnnGroups(anns);
         fetchAndRenderCommentsFor(remoteId);
@@ -526,16 +507,13 @@ function renderAnnGroups(anns){
     });
   });
 
-  // wire post comment buttons & input handlers
+  // wire post buttons and input handlers (attach handlers safely)
   cont.querySelectorAll('[id^="post-comment-"]').forEach(btn=>{
     const remoteId = btn.getAttribute('data-remote-id') || btn.id.replace('post-comment-','');
-    const textarea = document.getElementById(`comment-input-${remoteId}`);
-    const list = document.getElementById(`comments-list-${remoteId}`);
-    // ensure event registration: remove existing listeners if any by cloning
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-
-    newBtn.addEventListener('click', async (ev)=>{
+    const originalBtn = btn;
+    const newBtn = originalBtn.cloneNode(true);
+    originalBtn.parentNode.replaceChild(newBtn, originalBtn);
+    newBtn.addEventListener('click', async ()=>{
       const ta = document.getElementById(`comment-input-${remoteId}`);
       if(!ta) return alert('Comment input not found.');
       const raw = ta.value.trim();
@@ -545,13 +523,12 @@ function renderAnnGroups(anns){
       const finalAuthor = parsed.author || 'Stacy';
       try{
         await db.collection('annotations').doc(remoteId).collection('comments').add({ text: finalText, author: finalAuthor, created_at: firebase.firestore.FieldValue.serverTimestamp() });
-        // append locally in UI (no date/time)
-        const listEl = document.getElementById(`comments-list-${remoteId}`);
-        if(listEl){
-          if(listEl.querySelector('.small')) listEl.innerHTML = '';
-          const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(finalAuthor)}</div><div style="margin-top:6px">${escapeHtml(finalText)}</div>`);
-          listEl.appendChild(item);
-        }
+        // update cache immediately
+        if(!commentCache[remoteId]) commentCache[remoteId] = { status:'loaded', items:[], lastFetched: Date.now(), lastRenderedHash: '' };
+        commentCache[remoteId].items = commentCache[remoteId].items || [];
+        commentCache[remoteId].items.push({ author: finalAuthor, text: finalText });
+        commentCache[remoteId].lastFetched = Date.now();
+        renderCommentsList(remoteId);
         ta.value = '';
         clearDraft(remoteId);
       }catch(e){
@@ -560,61 +537,127 @@ function renderAnnGroups(anns){
       }
     });
 
-    // save drafts on input events
-    if(textarea){
-      // remove any existing handler by cloning and replacing (to avoid duplication)
-      const taClone = textarea.cloneNode(true);
-      textarea.parentNode.replaceChild(taClone, textarea);
-      taClone.addEventListener('input', (ev)=>{
+    // input draft handlers - replace old textarea with clone to avoid duplicate listeners
+    const ta = document.getElementById(`comment-input-${remoteId}`);
+    if(ta){
+      const taClone = ta.cloneNode(true);
+      ta.parentNode.replaceChild(taClone, ta);
+      // restore draft if present
+      const d = loadDraftFromStorage(remoteId);
+      if(d && typeof d.value === 'string' && d.value.length) taClone.value = d.value;
+      taClone.addEventListener('input', ()=>{
         const v = taClone.value;
-        const selStart = taClone.selectionStart ?? null;
-        const selEnd = taClone.selectionEnd ?? null;
-        saveDraftToStorage(remoteId, v, selStart, selEnd);
+        const s = taClone.selectionStart ?? null;
+        const e = taClone.selectionEnd ?? null;
+        saveDraftToStorage(remoteId, v, s, e);
       });
-      // also save caret position on keyup (for some browsers)
-      taClone.addEventListener('keyup', (ev)=>{
+      taClone.addEventListener('keyup', ()=>{
         const v = taClone.value;
-        const selStart = taClone.selectionStart ?? null;
-        const selEnd = taClone.selectionEnd ?? null;
-        saveDraftToStorage(remoteId, v, selStart, selEnd);
+        const s = taClone.selectionStart ?? null;
+        const e = taClone.selectionEnd ?? null;
+        saveDraftToStorage(remoteId, v, s, e);
       });
     }
   });
 
-  // after wiring, ensure comments loaded for openCommentFor
-  if(openCommentFor){
-    fetchAndRenderCommentsFor(openCommentFor);
+  // ensure comments for openCommentFor are loaded (but fetch is debounced by cache)
+  if(openCommentFor) fetchAndRenderCommentsFor(openCommentFor);
+}
+
+/* render the comments list for remoteId using cache; update DOM only if content changed */
+function renderCommentsList(remoteId){
+  const listEl = document.getElementById(`comments-list-${remoteId}`);
+  if(!listEl) return;
+  const cache = commentCache[remoteId] || { status:'idle', items: [] };
+  if(cache.status === 'loaded'){
+    const items = cache.items || [];
+    const hash = itemsHash(items);
+    if(cache.lastRenderedHash === hash) return; // nothing changed -> avoid DOM rewrite
+    cache.lastRenderedHash = hash;
+    if(items.length === 0){
+      listEl.innerHTML = '<div class="small">No comments yet.</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    for(const c of items){
+      const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(c.author||'Anonymous')}</div><div style="margin-top:6px">${escapeHtml(c.text||'')}</div>`);
+      listEl.appendChild(item);
+    }
+    return;
+  } else if(cache.status === 'loading'){
+    // if we have items, show them; else keep existing content (avoid flicker)
+    if(cache.items && cache.items.length>0){
+      const hash = itemsHash(cache.items);
+      if(cache.lastRenderedHash === hash) return;
+      cache.lastRenderedHash = hash;
+      listEl.innerHTML = '';
+      for(const c of cache.items){
+        const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(c.author||'Anonymous')}</div><div style="margin-top:6px">${escapeHtml(c.text||'')}</div>`);
+        listEl.appendChild(item);
+      }
+      return;
+    }
+    // otherwise do nothing (keep "No comments yet." or previous)
+    return;
+  } else {
+    // idle/error: keep current DOM
+    return;
   }
 }
 
-/* fetch comments for annotation (remoteId) and render into the inline list (no date/time) */
-async function fetchAndRenderCommentsFor(remoteId){
+/* fetch comments from Firestore but avoid flicker:
+   - if cache loaded and recent (<5s) then just render
+   - if absent or stale, start fetch but only show "Loading..." after 200ms (delayed)
+*/
+async function fetchAndRenderCommentsFor(remoteId, force=false){
   if(!remoteId) return;
-  const listId = `comments-list-${remoteId}`;
-  const listEl = document.getElementById(listId);
-  if(!listEl) return;
-  listEl.innerHTML = '<div class="small">Loading comments…</div>';
+  const now = Date.now();
+  if(!commentCache[remoteId]) commentCache[remoteId] = { status:'idle', items: [], lastFetched:0, lastRenderedHash:'' };
+  const cache = commentCache[remoteId];
+
+  // if recently fetched and not forced, just render cached
+  if(!force && cache.status === 'loaded' && (now - (cache.lastFetched || 0) < 5000)){
+    renderCommentsList(remoteId);
+    return;
+  }
+
+  // if already loading, just render existing items
+  if(cache.status === 'loading' && !force){
+    renderCommentsList(remoteId);
+    return;
+  }
+
+  // mark loading and schedule delayed loading indicator to avoid flicker
+  cache.status = 'loading';
+  if(loadingTimers[remoteId]) { clearTimeout(loadingTimers[remoteId]); delete loadingTimers[remoteId]; }
+  loadingTimers[remoteId] = setTimeout(()=>{
+    const listEl = document.getElementById(`comments-list-${remoteId}`);
+    if(listEl && commentCache[remoteId] && commentCache[remoteId].status === 'loading'){
+      // Only show loading if still loading after 200ms AND there are truly no items
+      if(!commentCache[remoteId].items || commentCache[remoteId].items.length === 0){
+        listEl.innerHTML = '<div class="small">Loading comments…</div>';
+      }
+    }
+  }, 200);
+
   try{
     const snap = await db.collection('annotations').doc(remoteId).collection('comments').orderBy('created_at','asc').get();
     const comments = [];
     snap.forEach(d => { comments.push({ id:d.id, ...d.data() }); });
-    if(comments.length === 0) listEl.innerHTML = '<div class="small">No comments yet.</div>';
-    else {
-      listEl.innerHTML = '';
-      for(const c of comments){
-        const author = c.author || 'Anonymous';
-        const text = c.text || '';
-        const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(author)}</div><div style="margin-top:6px">${escapeHtml(text)}</div>`);
-        listEl.appendChild(item);
-      }
-    }
+    cache.items = comments.map(c => ({ author: c.author || 'Anonymous', text: c.text || '' }));
+    cache.status = 'loaded';
+    cache.lastFetched = Date.now();
+    renderCommentsList(remoteId);
   }catch(e){
     console.error('fetch comments error', e);
-    listEl.innerHTML = '<div class="small">Could not load comments.</div>';
+    cache.status = 'error';
+    // leave whatever was previously shown; do not replace with Loading to avoid flicker
+  }finally{
+    if(loadingTimers[remoteId]) { clearTimeout(loadingTimers[remoteId]); delete loadingTimers[remoteId]; }
   }
 }
 
-/* Firestore helpers */
+/* Firestore helpers for annotations (unchanged) */
 async function pushAnnotationToFirestore(payload){
   try{
     const doc = {
@@ -635,19 +678,11 @@ async function pushAnnotationToFirestore(payload){
 }
 
 async function updateAnnotationRemote(remoteId, updateObj){
-  try{
-    await db.collection('annotations').doc(remoteId).update(updateObj);
-    return { ok:true };
-  }catch(e){ console.warn('updateAnnotationRemote failed', e); return { ok:false, error:e }; }
+  try{ await db.collection('annotations').doc(remoteId).update(updateObj); return { ok:true }; }catch(e){ console.warn('updateAnnotationRemote failed', e); return { ok:false, error:e }; }
 }
-
-async function deleteAnnotationRemote(remoteId){
-  try{ await db.collection('annotations').doc(remoteId).delete(); return { ok:true }; }
-  catch(e){ console.warn('deleteAnnotationRemote failed', e); return { ok:false, error:e }; }
-}
+async function deleteAnnotationRemote(remoteId){ try{ await db.collection('annotations').doc(remoteId).delete(); return { ok:true }; } catch(e){ console.warn('deleteAnnotationRemote failed', e); return { ok:false, error:e }; } }
 
 /* selection -> display offset mapping helpers (kept robust) */
-
 function collectTextNodes(root){
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
   const arr = [];
@@ -657,8 +692,6 @@ function collectTextNodes(root){
   }
   return arr;
 }
-
-/* convert DOM Range start to display char offset robustly using Range text length from container start */
 function displayOffsetFromRange(range){
   try{
     if(!range) return null;
@@ -666,27 +699,15 @@ function displayOffsetFromRange(range){
     if(!container.contains(range.startContainer)) return null;
     const r = document.createRange();
     r.setStart(container, 0);
-    try {
-      r.setEnd(range.startContainer, range.startOffset);
-    } catch(e){
+    try { r.setEnd(range.startContainer, range.startOffset); } catch(e){
       const nodes = collectTextNodes(container);
       let chars = 0;
-      for(const node of nodes){
-        if(node === range.startContainer){
-          return chars + range.startOffset;
-        }
-        chars += node.textContent.length;
-      }
+      for(const node of nodes){ if(node === range.startContainer) return chars + range.startOffset; chars += node.textContent.length; }
       return null;
     }
     return r.toString().length;
-  }catch(e){
-    console.warn('displayOffsetFromRange error', e);
-    return null;
-  }
+  }catch(e){ console.warn('displayOffsetFromRange error', e); return null; }
 }
-
-/* convert display offset/length to raw start/end using mapping computed earlier */
 function displayToRawRange(displayStart, length){
   const map = window.current.displayToRawMap || [];
   const displayText = window.current.displayText || '';
@@ -697,40 +718,24 @@ function displayToRawRange(displayStart, length){
   let rawStart = map[start];
   if(rawStart === undefined){
     let found = false;
-    for(let i = start+1; i < Math.min(map.length, start + 8); i++){
-      if(map[i] !== undefined){ rawStart = map[i]; found = true; break; }
-    }
-    if(!found){
-      for(let i = start-1; i >= Math.max(0, start-8); i--){
-        if(map[i] !== undefined){ rawStart = map[i]; break; }
-      }
-    }
+    for(let i = start+1; i < Math.min(map.length, start + 8); i++){ if(map[i] !== undefined){ rawStart = map[i]; found = true; break; } }
+    if(!found){ for(let i = start-1; i >= Math.max(0, start-8); i--){ if(map[i] !== undefined){ rawStart = map[i]; break; } } }
   }
   const rawEndBase = map[lastIndex];
   let rawEnd;
   if(rawEndBase !== undefined) rawEnd = rawEndBase + 1;
   else if(rawStart !== undefined) rawEnd = rawStart + length;
   else rawEnd = undefined;
-
   if(rawStart === undefined || rawEnd === undefined || rawEnd <= rawStart) return null;
   return { start_idx: rawStart, end_idx: rawEnd };
 }
-
-/* fallback: find indices in displayText (normalized) */
 function findAllIndicesInDisplay(display, needle){
   const res = [];
   if(!needle) return res;
   let pos = 0;
-  while(true){
-    const idx = display.indexOf(needle, pos);
-    if(idx === -1) break;
-    res.push(idx);
-    pos = idx + Math.max(1, needle.length);
-  }
+  while(true){ const idx = display.indexOf(needle, pos); if(idx === -1) break; res.push(idx); pos = idx + Math.max(1, needle.length); }
   return res;
 }
-
-/* DOM range from display char index */
 function domRangeForDisplayIndex(container, displayIndex, length){
   const nodes = collectTextNodes(container);
   let chars = 0;
@@ -740,19 +745,13 @@ function domRangeForDisplayIndex(container, displayIndex, length){
     if(displayIndex < next){
       const startOffset = Math.max(0, displayIndex - chars);
       range.setStart(node, startOffset);
-      if(length <= node.textContent.length - startOffset){
-        range.setEnd(node, startOffset + length);
-        return range;
-      }
+      if(length <= node.textContent.length - startOffset){ range.setEnd(node, startOffset + length); return range; }
       let remaining = length - (node.textContent.length - startOffset);
       let reachedStartNode = false;
       const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
       let n;
       while((n = walker.nextNode())){
-        if(!reachedStartNode){
-          if(n === node) reachedStartNode = true;
-          continue;
-        }
+        if(!reachedStartNode){ if(n === node) reachedStartNode = true; continue; }
         if(remaining <= n.textContent.length){ range.setEnd(n, remaining); return range; }
         remaining -= n.textContent.length;
       }
@@ -764,14 +763,11 @@ function domRangeForDisplayIndex(container, displayIndex, length){
   return null;
 }
 
-/* compute selection robustly: uses display mapping first, fallback to text search+rect distance */
+/* compute selection robustly */
 const articleEl = document.getElementById('article');
 const annotFab = document.getElementById('annot-fab');
 const lookupBtn = document.getElementById('lookup-btn');
-
 function hideFabAndLookup(){ annotFab.style.display='none'; lookupBtn.style.display='none'; }
-
-/* position helpers */
 function showFabAtRect(rect){
   if(!rect) return hideFabAndLookup();
   const scrollY = window.scrollY || window.pageYOffset;
@@ -780,26 +776,18 @@ function showFabAtRect(rect){
   annotFab.style.left = left + 'px';
   annotFab.style.top = top + 'px';
   annotFab.style.display = 'block';
-  // lookup button slightly above
   lookupBtn.style.left = (left + 96) + 'px';
   lookupBtn.style.top = (top) + 'px';
   lookupBtn.style.display = 'block';
 }
-
-/* capture selection into pendingSelection using mapping */
 function captureSelectionFromRange(range){
   const selText = range.toString();
   if(!selText || !window.current.raw) return null;
-
   const displayStart = displayOffsetFromRange(range);
   if(displayStart !== null && displayStart !== undefined){
     const dr = displayToRawRange(displayStart, selText.length);
-    if(dr){
-      pendingSelection = { start_idx: dr.start_idx, end_idx: dr.end_idx, text: window.current.raw.slice(dr.start_idx, dr.end_idx) };
-      return pendingSelection;
-    }
+    if(dr){ pendingSelection = { start_idx: dr.start_idx, end_idx: dr.end_idx, text: window.current.raw.slice(dr.start_idx, dr.end_idx) }; return pendingSelection; }
   }
-
   const displayText = normalizeForMatching(window.current.displayText || '');
   const needle = normalizeForMatching(selText);
   const indices = findAllIndicesInDisplay(displayText, needle);
@@ -820,14 +808,10 @@ function captureSelectionFromRange(range){
   pendingSelection = { start_idx: rawRange.start_idx, end_idx: rawRange.end_idx, text: window.current.raw.slice(rawRange.start_idx, rawRange.end_idx) };
   return pendingSelection;
 }
-
-/* rect distance */
 function rectDistance(a,b){ const ax=a.left+a.width/2, ay=a.top+a.height/2, bx=b.left+b.width/2, by=b.top+b.height/2; return Math.hypot(ax-bx, ay-by); }
 
-/* selectionchange logic */
 document.addEventListener('selectionchange', onSelectionChange);
 document.addEventListener('pointerup', onSelectionChange);
-
 function onSelectionChange(){
   const sel = window.getSelection();
   const editorOpen = document.getElementById('annotation-editor').style.display === 'block';
@@ -835,12 +819,8 @@ function onSelectionChange(){
   const range = sel.getRangeAt(0);
   const text = sel.toString();
   if(!text || !window.current.raw){ if(editorOpen) return; pendingSelection = null; hideFabAndLookup(); return; }
-
-  // try to capture selection
   const cap = captureSelectionFromRange(range);
   if(!cap){ if(editorOpen) return; pendingSelection = null; hideFabAndLookup(); return; }
-
-  // compute rect for placement
   const selRect = range.getBoundingClientRect();
   if(selRect && selRect.width>0 && selRect.height>0){
     if(window.innerWidth < 980){ annotFab.style.position='fixed'; lookupBtn.style.position='fixed'; annotateFabFixedPlacement(); }
@@ -849,52 +829,18 @@ function onSelectionChange(){
     annotFab.style.position='fixed'; lookupBtn.style.position='fixed';
     annotateFabFixedPlacement();
   }
-
-  // Only show lookup button for single-token selections (no whitespace)
   if(/^\S+$/.test(text.trim())) lookupBtn.style.display = 'block';
   else lookupBtn.style.display = 'none';
 }
-
 function annotateFabFixedPlacement(){
   annotFab.style.right = '14px'; annotFab.style.bottom = '110px'; annotFab.style.left = ''; annotFab.style.top = ''; annotFab.style.display='block';
-  lookupBtn.style.right = '14px'; lookupBtn.style.bottom = '150px'; lookupBtn.style.left = ''; lookupBtn.style.top = ''; // slightly above
-  lookupBtn.style.display = 'none'; // become visible if single-token
+  lookupBtn.style.right = '14px'; lookupBtn.style.bottom = '150px'; lookupBtn.style.left = ''; lookupBtn.style.top = ''; lookupBtn.style.display = 'none';
 }
-
-/* prevent selection loss on FAB click - capture selection on mousedown */
-annotFab.addEventListener('pointerdown', (ev)=>{
-  ev.preventDefault(); // prevents selection collapse
-  const sel = window.getSelection();
-  if(!sel || sel.rangeCount===0) return;
-  const range = sel.getRangeAt(0);
-  captureSelectionFromRange(range);
-});
-
-/* when annotate clicked, open editor. The pointerdown has already captured selection. */
-annotFab.addEventListener('click', ()=>{
-  if(!pendingSelection) return alert('No selection.');
-  $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,120)}${pendingSelection.text.length>120?'…':''}"`;
-  $('#annotation-text').value = '';
-  $('#annotation-editor').style.display = 'block';
-  $('#annotation-editor').dataset.editing = '';
-  $('#delete-annotation').style.display = 'none';
-  $('#annotation-editor').dataset.remoteId = '';
-  document.getElementById('right-col').classList.remove('collapsed');
-  document.getElementById('right-col').scrollTop = 0;
-  hideFabAndLookup();
-});
-
-/* lookup button handlers: pointerdown prevents selection loss too */
+annotFab.addEventListener('pointerdown', (ev)=>{ ev.preventDefault(); const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return; const range = sel.getRangeAt(0); captureSelectionFromRange(range); });
+annotFab.addEventListener('click', ()=>{ if(!pendingSelection) return alert('No selection.'); $('#selection-preview').innerText = `"${pendingSelection.text.slice(0,120)}${pendingSelection.text.length>120?'…':''}"`; $('#annotation-text').value = ''; $('#annotation-editor').style.display = 'block'; $('#annotation-editor').dataset.editing = ''; $('#delete-annotation').style.display = 'none'; $('#annotation-editor').dataset.remoteId = ''; document.getElementById('right-col').classList.remove('collapsed'); document.getElementById('right-col').scrollTop = 0; hideFabAndLookup(); });
 lookupBtn.addEventListener('pointerdown', (ev)=>{ ev.preventDefault(); });
-lookupBtn.addEventListener('click', ()=>{
-  const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
-  const text = sel.toString().trim();
-  if(!text) return alert('No selection.');
-  lookupDefinition(text);
-  hideFabAndLookup();
-});
+lookupBtn.addEventListener('click', ()=>{ const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return; const text = sel.toString().trim(); if(!text) return alert('No selection.'); lookupDefinition(text); hideFabAndLookup(); });
 
-/* dictionary lookup (unchanged) */
 async function lookupDefinition(word){
   $('#define-content').innerHTML = '<div class="small">Looking up…</div>';
   $('#define-modal').style.display = 'block';
@@ -923,9 +869,8 @@ async function lookupDefinition(word){
 }
 $('#close-define').addEventListener('click', ()=>{ $('#define-modal').style.display='none'; });
 
-/* Save & edit annotations (unchanged except Taru parse already in place) */
+/* Save & edit annotations (same behavior as before) */
 $('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId=''; window.getSelection().removeAllRanges(); hideFabAndLookup(); });
-
 $('#delete-annotation').addEventListener('click', async ()=>{
   const editingId = $('#annotation-editor').dataset.editing;
   if(!editingId) return alert('No annotation selected for deletion');
@@ -937,18 +882,15 @@ $('#delete-annotation').addEventListener('click', async ()=>{
   $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId='';
   try{ if(ann && ann._remoteId) await deleteAnnotationRemote(ann._remoteId); }catch(e){ console.warn('remote delete failed', e); alert('Remote delete failed'); }
 });
-
 $('#save-annotation').addEventListener('click', async ()=>{
   if(!window.current.filePath) return alert('Open a reading first.');
   let noteRaw = $('#annotation-text').value.trim(); if(!noteRaw) return alert('Write a note.');
   const editingId = $('#annotation-editor').dataset.editing;
   const nowISO = new Date().toISOString();
   let anns = loadAnnsLocal(window.current.filePath) || [];
-
   const parsed = parseTaruPrefix(noteRaw);
   const finalNote = parsed.text;
   const finalAuthor = parsed.author;
-
   if(editingId){
     const idx = anns.findIndex(a=> String(a.id) === String(editingId));
     if(idx === -1) return alert('Annotation not found.');
@@ -956,7 +898,6 @@ $('#save-annotation').addEventListener('click', async ()=>{
     if(finalAuthor) anns[idx].author = finalAuthor;
     anns[idx].edited_at = nowISO;
     saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations();
-
     try{
       const remoteId = anns[idx]._remoteId;
       if(remoteId){
@@ -974,11 +915,9 @@ $('#save-annotation').addEventListener('click', async ()=>{
       }
     }catch(e){ console.warn('remote edit failed', e); }
   } else {
-    // create new
     if(!pendingSelection) return alert('Select text first.');
     const startIdx = Math.floor(pendingSelection.start_idx);
     const endIdx = Math.floor(pendingSelection.end_idx);
-
     const existingExact = anns.find(a => Number(a.start_idx) === startIdx && Number(a.end_idx) === endIdx);
     if(existingExact){
       $('#annotation-editor').style.display = 'block';
@@ -989,7 +928,6 @@ $('#save-annotation').addEventListener('click', async ()=>{
       $('#delete-annotation').dataset.remoteId = existingExact._remoteId || '';
       return;
     }
-
     const newAnn = {
       id: String(Date.now()) + '-' + Math.floor(Math.random()*9999),
       file: window.current.filePath,
@@ -1001,16 +939,14 @@ $('#save-annotation').addEventListener('click', async ()=>{
       created_at: nowISO
     };
     anns.push(newAnn); saveAnnsLocal(window.current.filePath, anns); renderArticleWithAnnotations();
-
     const res = await pushAnnotationToFirestore(newAnn);
     if(!res.ok){ console.warn('Firestore write failed', res.error); alert('Firestore write failed; saved locally.'); }
     else { const loc = loadAnnsLocal(window.current.filePath); const li = loc.find(a=> a.id === newAnn.id); if(li){ li._remoteId = res.id; saveAnnsLocal(window.current.filePath, loc); renderArticleWithAnnotations(); } }
   }
-
   $('#annotation-editor').style.display = 'none'; $('#annotation-editor').dataset.editing = ''; pendingSelection = null; window.getSelection().removeAllRanges(); hideFabAndLookup();
 });
 
-/* fetch + realtime */
+/* fetch + realtime (annotations) */
 async function fetchAnnotationsOnce(filePath){
   if(!filePath) return;
   try{
@@ -1027,7 +963,6 @@ async function fetchAnnotationsOnce(filePath){
     return anns;
   }catch(e){ console.error('fetchAnnotationsOnce error', e); return null; }
 }
-
 function subscribeRealtime(filePath){
   if(unsubscribeRealtime){ try{ unsubscribeRealtime(); }catch(e){} unsubscribeRealtime = null; }
   if(pollingFallback){ clearInterval(pollingFallback); pollingFallback = null; }
