@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Readings (annotator)</title>
+<title>Readings</title>
 
 <!-- markdown renderer + firebase (compat libs kept) -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -36,8 +36,10 @@ h1{margin:0;font-size:16px}
 .ann-active{background:linear-gradient(90deg,var(--accent), #8a5a2a);color:#fff;border:none}
 .annotation-editor{margin-bottom:12px}
 textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+/* Annotate FAB */
 #annot-fab{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
-#lookup-btn{position:absolute;z-index:9999;display:none;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,#fff,#eee);color:#111;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.35);font-weight:600}
+/* Lookup button: made same look as Annotate (same size/shape/color) */
+#lookup-btn{position:absolute;z-index:9999;display:none;padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-weight:600}
 .collapse-btn{background:rgba(255,255,255,0.03);color:var(--muted);border:1px solid rgba(255,255,255,0.02);padding:6px;border-radius:8px;cursor:pointer}
 .collapse-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700;padding:0}
 .panel-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px }
@@ -50,11 +52,14 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 #pw-box input{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);margin-top:6px}
 #pw-submit{width:180px;padding:12px;border-radius:10px;border:none;margin-top:12px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:white;font-weight:700;cursor:pointer}
 
-.comment-modal{position:fixed;right:18px;bottom:18px;z-index:200000;max-width:520px;background:var(--panel);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);color:var(--muted)}
-.comment-item{padding:6px;border-radius:6px;margin-bottom:6px;background:rgba(0,0,0,0.02);font-size:13px}
+/* comment UI inline inside annotation group (now part of sidebar) */
+.comment-block{margin-top:8px;padding:10px;border-radius:8px;background:rgba(0,0,0,0.02);border:1px solid rgba(255,255,255,0.02)}
+.comment-item{padding:8px;border-radius:6px;margin-bottom:6px;background:rgba(0,0,0,0.03);font-size:13px}
+.comment-author{display:inline-block;padding:4px 8px;border-radius:6px;background:linear-gradient(90deg,var(--accent), #8a5a2a);color:#fff;font-weight:600;margin-bottom:6px;font-size:12px}
 .comment-input{display:flex;gap:8px;margin-top:8px}
-.comment-input textarea{min-height:56px}
+.comment-input textarea{min-height:56px;flex:1;border-radius:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
 
+/* define modal */
 #define-modal{display:none;position:fixed;right:18px;bottom:18px;z-index:200001;background:var(--panel);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);max-width:420px;color:var(--muted)}
 #define-modal .close-btn{margin-top:8px}
 
@@ -136,16 +141,6 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
   </div>
 </div>
 
-<!-- comment modal -->
-<div id="comment-modal" class="comment-modal" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:center"><strong>Comments</strong><button class="collapse-btn" id="close-comments">Close</button></div>
-  <div id="comments-list" style="margin-top:8px"><div class="small">No comments loaded.</div></div>
-  <div class="comment-input">
-    <textarea id="comment-text" placeholder="Write a comment..."></textarea>
-    <button class="collapse-btn" id="post-comment">Post</button>
-  </div>
-</div>
-
 <!-- define modal (opaque background, not translucent) -->
 <div id="define-modal">
   <div id="define-content"></div>
@@ -154,13 +149,13 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <script>
 /*
-  Fix summary:
-  - Rewrote displayOffsetFromRange to compute offset robustly using Range setStart( article, 0 )
-  - Fixed displayToRawRange clamping and added nearest-mapping fallback
-  - Hardened domRangeForDisplayIndex
-  - Prevented native lookup callout: CSS + contextmenu preventDefault on #article
-  - Ensured pendingSelection is reliably captured on pointerdown of FAB
-  - Made comment modal persistent and safe from accidental clearing during re-renders
+  UI update:
+  - Lookup button style matched to annotate button
+  - Comment UI integrated directly into each annotation group in the sidebar
+  - Comments show author label, text (no date/time), input box and Post button inline
+  - Taru prefix parsing extended to comments
+  - Minimal change to annotation/comment logic otherwise; re-used existing firestore interactions
+  - Maintains open comment group in `openCommentFor` across re-renders
 */
 
 const PASSWORD = "Stacy"; // change this
@@ -204,6 +199,9 @@ let unsubscribeRealtime = null;
 let pollingFallback = null;
 window.current.displayToRawMap = []; // map display index -> raw index
 window.current.displayText = '';     // the flattened display text (raw without newline chars)
+
+// open comment group remote id or annotation id
+let openCommentFor = null;
 
 /* password overlay */
 function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; }catch(e){return false;} }
@@ -323,7 +321,15 @@ function annKeyFor(fp){ return STORAGE_PREFIX + 'anns::' + fp; }
 function loadAnnsLocal(fp){ try{ const s = localStorage.getItem(annKeyFor(fp)); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
 function saveAnnsLocal(fp, arr){ localStorage.setItem(annKeyFor(fp), JSON.stringify(arr)); }
 
-/* render annotation groups - same idea but note comments open modal */
+/* parse Taru prefix for notes and comments */
+function parseTaruPrefix(raw){
+  if(!raw) return { text: raw, author: undefined };
+  const m = raw.match(/^\s*(Taru)\s+(.*)$/i);
+  if(m) return { text: m[2].trim(), author: m[1] };
+  return { text: raw, author: undefined };
+}
+
+/* render annotation groups - now includes inline comment area */
 function renderAnnGroups(anns){
   const cont = $('#annotations-list'); cont.innerHTML = '';
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
@@ -351,10 +357,9 @@ function renderAnnGroups(anns){
     const body = el('div',{}, `${marked.parseInline(g.items[0].note||'')}<div style="margin-top:8px;display:flex;gap:8px">
       <button class="collapse-btn" data-id="${g.items[0].id}" data-action="jump">Jump</button>
       <button class="collapse-btn" data-id="${g.items[0].id}" data-action="edit">Edit</button>
-      <button class="collapse-btn" data-id="${g.items[0]._remoteId||''}" data-action="comment">Comment</button>
+      <button class="collapse-btn" data-id="${g.items[0]._remoteId||g.items[0].id}" data-action="comment">Comment</button>
       <button class="collapse-btn" data-id="${g.items[0].id}" data-action="delete">Delete</button>
       </div>`);
-
     g.items.forEach((it, idx)=>{
       const authorLabel = escapeHtml(it.author || 'Stacy');
       const tab = el('button',{className:'ann-tab'}, authorLabel);
@@ -365,19 +370,37 @@ function renderAnnGroups(anns){
         body.innerHTML = `${marked.parseInline(it.note||'')}<div style="margin-top:8px;display:flex;gap:8px">
           <button class="collapse-btn" data-id="${it.id}" data-action="jump">Jump</button>
           <button class="collapse-btn" data-id="${it.id}" data-action="edit">Edit</button>
-          <button class="collapse-btn" data-id="${it._remoteId||''}" data-action="comment">Comment</button>
+          <button class="collapse-btn" data-id="${it._remoteId||it.id}" data-action="comment">Comment</button>
           <button class="collapse-btn" data-id="${it.id}" data-action="delete">Delete</button>
           </div>`;
       });
       tabs.appendChild(tab);
     });
-
     groupEl.appendChild(tabs);
     groupEl.appendChild(body);
+
+    // Inline comment area (initially hidden unless openCommentFor matches)
+    const remoteId = g.items[0]._remoteId || g.items[0].id;
+    const commentBlock = el('div',{className:'comment-block', id:`comments-for-${remoteId}`, style: openCommentFor === remoteId ? '' : 'display:none'});
+    // label showing which annotation it's for
+    commentBlock.appendChild(el('div',{className:'small', style:'margin-bottom:8px;font-weight:600'}, `Commenting on: "${escapeHtml(excerpt.slice(0,120))}${excerpt.length>120?'…':''}"`));
+    // comments list container
+    const commentsList = el('div',{className:'comments-list', id:`comments-list-${remoteId}`}, `<div class="small">Loading comments…</div>`);
+    commentBlock.appendChild(commentsList);
+    // input row
+    const inputRow = el('div',{className:'comment-input'});
+    const textarea = el('textarea',{id:`comment-input-${remoteId}`, placeholder:'Write a comment...'});
+    inputRow.appendChild(textarea);
+    const postBtn = el('button',{className:'collapse-btn', id:`post-comment-${remoteId}`, 'data-remote-id': remoteId}, 'Post');
+    inputRow.appendChild(postBtn);
+    commentBlock.appendChild(inputRow);
+
+    groupEl.appendChild(commentBlock);
+
     cont.appendChild(groupEl);
   });
 
-  // wire up buttons in the newly rendered groups (delegated approach would be fine too)
+  // wire up action buttons in groups
   cont.querySelectorAll('[data-action]').forEach(btn=>{
     btn.addEventListener('click', async (ev)=>{
       const id = btn.getAttribute('data-id'), action = btn.getAttribute('data-action');
@@ -398,9 +421,17 @@ function renderAnnGroups(anns){
         $('#delete-annotation').dataset.remoteId = ann._remoteId || '';
         document.getElementById('right-col').classList.remove('collapsed');
       } else if(action === 'comment'){
-        const remoteId = id;
-        if(!remoteId) return alert('This annotation has not been saved remotely yet. Save first to enable comments.');
-        openCommentModal(remoteId);
+        const remoteId = id; // ensure this is remote id or fall back to id
+        // if annotation not saved remotely, notify
+        const targetAnn = anns.find(a => (a._remoteId && String(a._remoteId) === String(remoteId)) || String(a.id) === String(remoteId));
+        if(targetAnn && !targetAnn._remoteId) return alert('This annotation has not been saved remotely yet. Save first to enable comments.');
+        // set as open comment group, re-render to make comment block visible and then fetch comments
+        openCommentFor = remoteId;
+        renderAnnGroups(anns);
+        // fetch comments for this annotation and populate the list
+        fetchAndRenderCommentsFor(remoteId);
+        // focus textarea
+        setTimeout(()=>{ const t = document.getElementById(`comment-input-${remoteId}`); if(t) t.focus(); }, 120);
       } else if(action === 'delete'){
         if(!ann) return alert('Not found');
         if(!confirm('Delete this annotation?')) return;
@@ -410,46 +441,85 @@ function renderAnnGroups(anns){
       }
     });
   });
+
+  // wire post comment buttons (delegated)
+  cont.querySelectorAll('[id^="post-comment-"]').forEach(btn=>{
+    btn.addEventListener('click', async (ev)=>{
+      const remoteId = btn.getAttribute('data-remote-id') || btn.id.replace('post-comment-','');
+      const textarea = document.getElementById(`comment-input-${remoteId}`);
+      if(!textarea) return alert('Comment input not found.');
+      const raw = textarea.value.trim();
+      if(!raw) return alert('Write something');
+      // Taru prefix support for comments
+      const parsed = parseTaruPrefix(raw);
+      const finalText = parsed.text;
+      const finalAuthor = parsed.author || 'Stacy';
+      // push to firestore under annotation doc
+      try{
+        await db.collection('annotations').doc(remoteId).collection('comments').add({ text: finalText, author: finalAuthor, created_at: firebase.firestore.FieldValue.serverTimestamp() });
+        // append locally in UI (no date/time)
+        const list = document.getElementById(`comments-list-${remoteId}`);
+        if(list){
+          if(list.querySelector('.small')) list.innerHTML = '';
+          const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(finalAuthor)}</div><div style="margin-top:6px">${escapeHtml(finalText)}</div>`);
+          list.appendChild(item);
+        }
+        textarea.value = '';
+      }catch(e){
+        console.error('post comment failed', e);
+        alert('Comment failed');
+      }
+    });
+  });
+
+  // after wiring, if any openCommentFor present, ensure comments loaded (safe-guard)
+  if(openCommentFor){
+    fetchAndRenderCommentsFor(openCommentFor);
+  }
 }
 
-/* COMMENT modal logic (persistent outside re-renders) */
-let currentCommentRemoteId = null;
-$('#close-comments').addEventListener('click', ()=>{ $('#comment-modal').style.display='none'; currentCommentRemoteId = null; $('#comments-list').innerHTML = '<div class="small">No comments loaded.</div>'; });
-
-async function openCommentModal(remoteId){
-  currentCommentRemoteId = remoteId;
-  $('#comment-modal').style.display = 'block';
-  $('#comments-list').innerHTML = '<div class="small">Loading…</div>';
+/* fetch comments for annotation (remoteId) and render into the inline list (no date/time) */
+async function fetchAndRenderCommentsFor(remoteId){
+  if(!remoteId) return;
+  const listId = `comments-list-${remoteId}`;
+  const listEl = document.getElementById(listId);
+  if(!listEl) return;
+  listEl.innerHTML = '<div class="small">Loading comments…</div>';
   try{
     const snap = await db.collection('annotations').doc(remoteId).collection('comments').orderBy('created_at','asc').get();
     const comments = [];
     snap.forEach(d => { comments.push({ id:d.id, ...d.data() }); });
-    if(comments.length === 0) $('#comments-list').innerHTML = '<div class="small">No comments yet.</div>';
+    if(comments.length === 0) listEl.innerHTML = '<div class="small">No comments yet.</div>';
     else {
-      $('#comments-list').innerHTML = '';
+      listEl.innerHTML = '';
       for(const c of comments){
-        const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml(c.author||'Anonymous')}</strong> <div style="font-size:12px;color:var(--muted-2)">${new Date(c.created_at?.toDate ? c.created_at.toDate() : c.created_at).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(c.text)}</div>`);
-        $('#comments-list').appendChild(item);
+        const author = c.author || 'Anonymous';
+        const text = c.text || '';
+        const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(author)}</div><div style="margin-top:6px">${escapeHtml(text)}</div>`);
+        listEl.appendChild(item);
       }
     }
-  }catch(e){ console.error('openCommentModal error', e); $('#comments-list').innerHTML = '<div class="small">Could not load comments.</div>'; }
+  }catch(e){
+    console.error('fetch comments error', e);
+    listEl.innerHTML = '<div class="small">Could not load comments.</div>';
+  }
 }
 
-$('#post-comment').addEventListener('click', async ()=>{
-  const text = $('#comment-text').value.trim();
-  if(!text) return alert('Write something');
-  if(!currentCommentRemoteId) return alert('No annotation selected.');
-  const doc = { text, author: 'Stacy', created_at: firebase.firestore.FieldValue.serverTimestamp() };
-  try{
-    await db.collection('annotations').doc(currentCommentRemoteId).collection('comments').add(doc);
-    $('#comment-text').value = '';
-    const item = el('div',{className:'comment-item'}, `<strong style="font-size:12px">${escapeHtml('Stacy')}</strong> <div style="font-size:12px;color:var(--muted-2)">${(new Date()).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(text)}</div>`);
-    if($('#comments-list').querySelector('.small')) $('#comments-list').innerHTML = '';
-    $('#comments-list').appendChild(item);
-  }catch(e){ console.error('post comment failed', e); alert('Comment failed'); }
-});
+/* NOTE: keep old comment-modal functions unused (we now use inline comments) */
 
-/* selection -> display offset mapping helpers */
+/* COMMENT modal logic placeholders removed (no floating modal) */
+
+/* selection -> display offset mapping helpers (unchanged robust implementations) */
+
+function collectTextNodes(root){
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  const arr = [];
+  let n;
+  while(n = walker.nextNode()){
+    arr.push(n);
+  }
+  return arr;
+}
 
 /* convert DOM Range start to display char offset robustly using Range text length from container start */
 function displayOffsetFromRange(range){
@@ -457,15 +527,11 @@ function displayOffsetFromRange(range){
     if(!range) return null;
     const container = document.getElementById('article');
     if(!container.contains(range.startContainer)) return null;
-    // Create a helper range from the start of the article content to the range start,
-    // then use its toString().length as the display offset. This correctly handles
-    // both text nodes and element containers because Range#setEnd accepts element+childIndex.
     const r = document.createRange();
     r.setStart(container, 0);
     try {
       r.setEnd(range.startContainer, range.startOffset);
     } catch(e){
-      // if setEnd fails (rare), fallback to iterating text nodes
       const nodes = collectTextNodes(container);
       let chars = 0;
       for(const node of nodes){
@@ -488,15 +554,11 @@ function displayToRawRange(displayStart, length){
   const map = window.current.displayToRawMap || [];
   const displayText = window.current.displayText || '';
   if(displayStart === null || displayStart === undefined) return null;
-  // clamp start to [0, displayText.length]
   const start = Math.max(0, Math.min(displayText.length, displayStart));
-  // compute last index (character index) we intend to cover
   const lastIndexUnclamped = displayStart + Math.max(0, length) - 1;
   const lastIndex = Math.max(0, Math.min(displayText.length - 1, lastIndexUnclamped));
-  // find raw mapping for start - if undefined, search forward for the next defined mapping
   let rawStart = map[start];
   if(rawStart === undefined){
-    // search forward up to a small window
     let found = false;
     for(let i = start+1; i < Math.min(map.length, start + 8); i++){
       if(map[i] !== undefined){ rawStart = map[i]; found = true; break; }
@@ -541,7 +603,6 @@ function domRangeForDisplayIndex(container, displayIndex, length){
     if(displayIndex < next){
       const startOffset = Math.max(0, displayIndex - chars);
       range.setStart(node, startOffset);
-      // fill end
       if(length <= node.textContent.length - startOffset){
         range.setEnd(node, startOffset + length);
         return range;
@@ -558,7 +619,6 @@ function domRangeForDisplayIndex(container, displayIndex, length){
         if(remaining <= n.textContent.length){ range.setEnd(n, remaining); return range; }
         remaining -= n.textContent.length;
       }
-      // if we get here, end at the last text node
       range.setEnd(node, node.textContent.length);
       return range;
     }
@@ -584,7 +644,7 @@ function showFabAtRect(rect){
   annotFab.style.top = top + 'px';
   annotFab.style.display = 'block';
   // lookup button slightly above
-  lookupBtn.style.left = (left + 80) + 'px';
+  lookupBtn.style.left = (left + 96) + 'px';
   lookupBtn.style.top = (top) + 'px';
   lookupBtn.style.display = 'block';
 }
@@ -594,7 +654,6 @@ function captureSelectionFromRange(range){
   const selText = range.toString();
   if(!selText || !window.current.raw) return null;
 
-  // try display mapping route
   const displayStart = displayOffsetFromRange(range);
   if(displayStart !== null && displayStart !== undefined){
     const dr = displayToRawRange(displayStart, selText.length);
@@ -604,12 +663,10 @@ function captureSelectionFromRange(range){
     }
   }
 
-  // fallback to searching in displayText (normalized) and choosing nearest rect
   const displayText = normalizeForMatching(window.current.displayText || '');
   const needle = normalizeForMatching(selText);
   const indices = findAllIndicesInDisplay(displayText, needle);
   if(indices.length === 0) { pendingSelection = null; return null; }
-  // compute best by rect distance
   const selRect = range.getBoundingClientRect();
   let best = null; let bestDist = Infinity;
   for(const idx of indices){
@@ -629,16 +686,6 @@ function captureSelectionFromRange(range){
 
 /* rect distance */
 function rectDistance(a,b){ const ax=a.left+a.width/2, ay=a.top+a.height/2, bx=b.left+b.width/2, by=b.top+b.height/2; return Math.hypot(ax-bx, ay-by); }
-
-function collectTextNodes(root){
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-  const arr = [];
-  let n;
-  while(n = walker.nextNode()){
-    arr.push(n);
-  }
-  return arr;
-}
 
 /* selectionchange logic */
 document.addEventListener('selectionchange', onSelectionChange);
@@ -662,7 +709,6 @@ function onSelectionChange(){
     if(window.innerWidth < 980){ annotFab.style.position='fixed'; lookupBtn.style.position='fixed'; annotateFabFixedPlacement(); }
     else { annotFab.style.position='absolute'; lookupBtn.style.position='absolute'; showFabAtRect(selRect); }
   } else {
-    // fallback to fixed placement if rect is zero-sized (end of doc)
     annotFab.style.position='fixed'; lookupBtn.style.position='fixed';
     annotateFabFixedPlacement();
   }
@@ -707,12 +753,11 @@ lookupBtn.addEventListener('click', ()=>{
   const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
   const text = sel.toString().trim();
   if(!text) return alert('No selection.');
-  // show definition modal
   lookupDefinition(text);
   hideFabAndLookup();
 });
 
-/* dictionary lookup */
+/* dictionary lookup (unchanged) */
 async function lookupDefinition(word){
   $('#define-content').innerHTML = '<div class="small">Looking up…</div>';
   $('#define-modal').style.display = 'block';
@@ -773,7 +818,7 @@ async function deleteAnnotationRemote(remoteId){
   catch(e){ console.warn('deleteAnnotationRemote failed', e); return { ok:false, error:e }; }
 }
 
-/* Save & edit annotations */
+/* Save & edit annotations (unchanged except Taru parse already in place) */
 $('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId=''; window.getSelection().removeAllRanges(); hideFabAndLookup(); });
 
 $('#delete-annotation').addEventListener('click', async ()=>{
@@ -795,15 +840,8 @@ $('#save-annotation').addEventListener('click', async ()=>{
   const nowISO = new Date().toISOString();
   let anns = loadAnnsLocal(window.current.filePath) || [];
 
-  // parse possible "Taru " prefix
-  function parseNoteAuthor(rawNote){
-    if(!rawNote) return { note: rawNote, author: undefined };
-    const m = rawNote.match(/^\s*(Taru)\s+(.*)$/i);
-    if(m){ return { note: m[2].trim(), author: m[1] }; }
-    return { note: rawNote, author: undefined };
-  }
-  const parsed = parseNoteAuthor(noteRaw);
-  const finalNote = parsed.note;
+  const parsed = parseTaruPrefix(noteRaw);
+  const finalNote = parsed.text;
   const finalAuthor = parsed.author;
 
   if(editingId){
@@ -831,15 +869,13 @@ $('#save-annotation').addEventListener('click', async ()=>{
       }
     }catch(e){ console.warn('remote edit failed', e); }
   } else {
-    // create new: ensure we have pendingSelection (pointerdown on FAB should have set it)
+    // create new
     if(!pendingSelection) return alert('Select text first.');
     const startIdx = Math.floor(pendingSelection.start_idx);
     const endIdx = Math.floor(pendingSelection.end_idx);
 
-    // If an annotation already exists with exact same start & end, open editor instead of duplicating
     const existingExact = anns.find(a => Number(a.start_idx) === startIdx && Number(a.end_idx) === endIdx);
     if(existingExact){
-      // open editor for that annotation
       $('#annotation-editor').style.display = 'block';
       $('#annotation-editor').dataset.editing = existingExact.id;
       $('#annotation-text').value = existingExact.note || '';
@@ -972,10 +1008,10 @@ async function initApp(){
   else { $('#article').innerHTML = '<div class="small">No readings found in /readings/. Add files or index.json.</div>'; }
 }
 
-/* Small utility: when user double-clicks, don't use confirm; instead do nothing special (we use lookup button now) */
-document.addEventListener('dblclick', (e)=>{ /* no-op to avoid native lookup/popups */ });
+/* Small utility: avoid native lookup/popups on double click */
+document.addEventListener('dblclick', (e)=>{ /* no-op */ });
 
-/* prevent native contextmenu/lookup from appearing on article (so the explicit "Look up" button is the only behavior) */
+/* prevent native contextmenu/lookup from appearing on article */
 $('#article').addEventListener('contextmenu', (e)=>{ e.preventDefault(); });
 
 /* small safety: if user clicks outside selection, hide the fab/buttons */
