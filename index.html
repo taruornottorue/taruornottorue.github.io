@@ -149,13 +149,11 @@ textarea{width:100%;min-height:88px;border-radius:8px;padding:8px;background:tra
 
 <script>
 /*
-  UI update:
-  - Lookup button style matched to annotate button
-  - Comment UI integrated directly into each annotation group in the sidebar
-  - Comments show author label, text (no date/time), input box and Post button inline
-  - Taru prefix parsing extended to comments
-  - Minimal change to annotation/comment logic otherwise; re-used existing firestore interactions
-  - Maintains open comment group in `openCommentFor` across re-renders
+  Preservation of comment drafts fix:
+  - commentDrafts stored per file and remoteId (localStorage + in-memory)
+  - on textarea input save draft
+  - before re-render capture focused comment textarea + selection, after re-render restore value, focus, selection
+  - when comment posted, clear the draft
 */
 
 const PASSWORD = "Stacy"; // change this
@@ -202,6 +200,45 @@ window.current.displayText = '';     // the flattened display text (raw without 
 
 // open comment group remote id or annotation id
 let openCommentFor = null;
+
+// comment drafts map: { "<file>::<remoteId>": { value, selStart, selEnd } }
+// also persisted to localStorage for resilience
+const DRAFT_PREFIX = 'candle_comment_draft::';
+const commentDrafts = {}; // in-memory cache
+
+function draftKey(remoteId){
+  const fp = window.current.filePath || 'unknown';
+  return `${DRAFT_PREFIX}${fp}::${remoteId}`;
+}
+
+function saveDraftToStorage(remoteId, value, selStart, selEnd){
+  try{
+    const key = draftKey(remoteId);
+    const payload = { value: value || '', selStart: selStart ?? null, selEnd: selEnd ?? null, updated: Date.now() };
+    localStorage.setItem(key, JSON.stringify(payload));
+    commentDrafts[key] = payload;
+  }catch(e){ console.warn('saveDraftToStorage failed', e); }
+}
+
+function loadDraftFromStorage(remoteId){
+  try{
+    const key = draftKey(remoteId);
+    if(commentDrafts[key]) return commentDrafts[key];
+    const raw = localStorage.getItem(key);
+    if(!raw) return { value: '', selStart: null, selEnd: null };
+    const parsed = JSON.parse(raw);
+    commentDrafts[key] = parsed;
+    return parsed;
+  }catch(e){ console.warn('loadDraftFromStorage failed', e); return { value: '', selStart: null, selEnd: null }; }
+}
+
+function clearDraft(remoteId){
+  try{
+    const key = draftKey(remoteId);
+    localStorage.removeItem(key);
+    delete commentDrafts[key];
+  }catch(e){ console.warn('clearDraft failed', e); }
+}
 
 /* password overlay */
 function isUnlocked(){ try{ return sessionStorage.getItem('candle_unlocked') === '1'; }catch(e){return false;} }
@@ -302,8 +339,47 @@ function buildAnnotatedHtml(text, anns){
   return `<p>${out}</p>`;
 }
 
-/* render article and compute display->raw mapping for later accurate conversions */
+/* Before re-render helpers: capture active comment state so we can restore after re-render */
+function captureActiveCommentState(){
+  try{
+    const active = document.activeElement;
+    if(!active) return null;
+    // pattern: id="comment-input-<remoteId>"
+    const m = active.id ? active.id.match(/^comment-input-(.+)$/) : null;
+    if(!m) return null;
+    const remoteId = m[1];
+    return {
+      remoteId,
+      selStart: active.selectionStart ?? null,
+      selEnd: active.selectionEnd ?? null,
+      scrollTop: active.scrollTop ?? 0
+    };
+  }catch(e){
+    return null;
+  }
+}
+
+function restoreActiveCommentState(state){
+  if(!state) return;
+  const id = `comment-input-${state.remoteId}`;
+  const ta = document.getElementById(id);
+  if(!ta) return;
+  // restore value from draft (ensures value is up-to-date), then restore selection & focus
+  const d = loadDraftFromStorage(state.remoteId);
+  if(d && typeof d.value === 'string'){
+    ta.value = d.value;
+  }
+  ta.focus();
+  try{
+    if(state.selStart !== null && state.selEnd !== null) ta.setSelectionRange(state.selStart, state.selEnd);
+  }catch(e){}
+  ta.scrollTop = state.scrollTop ?? 0;
+}
+
+/* render article and compute display->raw mapping for later accurate conversions
+   now captures active comment state before re-render and restores afterwards */
 function renderArticleWithAnnotations(){
+  const preState = captureActiveCommentState();
   const raw = window.current.raw || '';
   // build display mapping first and store it on window.current
   const mapping = buildDisplayMapping(raw);
@@ -312,7 +388,11 @@ function renderArticleWithAnnotations(){
 
   const anns = loadAnnsLocal(window.current.filePath) || [];
   $('#article').innerHTML = buildAnnotatedHtml(raw, anns);
+
+  // now render annotation groups and then restore active comment focus/selection
   renderAnnGroups(anns);
+  // small timeout to allow DOM to settle
+  setTimeout(()=>{ restoreActiveCommentState(preState); }, 40);
 }
 
 /* local storage helpers */
@@ -329,7 +409,8 @@ function parseTaruPrefix(raw){
   return { text: raw, author: undefined };
 }
 
-/* render annotation groups - now includes inline comment area */
+/* render annotation groups - now includes inline comment area.
+   Wiring for comment inputs includes saving drafts on input and preserving drafts on re-render. */
 function renderAnnGroups(anns){
   const cont = $('#annotations-list'); cont.innerHTML = '';
   if(!anns || anns.length===0){ cont.innerHTML = '<div class="small">No annotations yet.</div>'; return; }
@@ -390,6 +471,12 @@ function renderAnnGroups(anns){
     // input row
     const inputRow = el('div',{className:'comment-input'});
     const textarea = el('textarea',{id:`comment-input-${remoteId}`, placeholder:'Write a comment...'});
+    // load draft if present
+    try{
+      const d = loadDraftFromStorage(remoteId);
+      if(d && typeof d.value === 'string' && d.value.length) textarea.value = d.value;
+      // restore selection if available slightly later (done by restoreActiveCommentState)
+    }catch(e){}
     inputRow.appendChild(textarea);
     const postBtn = el('button',{className:'collapse-btn', id:`post-comment-${remoteId}`, 'data-remote-id': remoteId}, 'Post');
     inputRow.appendChild(postBtn);
@@ -422,15 +509,12 @@ function renderAnnGroups(anns){
         document.getElementById('right-col').classList.remove('collapsed');
       } else if(action === 'comment'){
         const remoteId = id; // ensure this is remote id or fall back to id
-        // if annotation not saved remotely, notify
         const targetAnn = anns.find(a => (a._remoteId && String(a._remoteId) === String(remoteId)) || String(a.id) === String(remoteId));
         if(targetAnn && !targetAnn._remoteId) return alert('This annotation has not been saved remotely yet. Save first to enable comments.');
         // set as open comment group, re-render to make comment block visible and then fetch comments
         openCommentFor = remoteId;
         renderAnnGroups(anns);
-        // fetch comments for this annotation and populate the list
         fetchAndRenderCommentsFor(remoteId);
-        // focus textarea
         setTimeout(()=>{ const t = document.getElementById(`comment-input-${remoteId}`); if(t) t.focus(); }, 120);
       } else if(action === 'delete'){
         if(!ann) return alert('Not found');
@@ -442,37 +526,62 @@ function renderAnnGroups(anns){
     });
   });
 
-  // wire post comment buttons (delegated)
+  // wire post comment buttons & input handlers
   cont.querySelectorAll('[id^="post-comment-"]').forEach(btn=>{
-    btn.addEventListener('click', async (ev)=>{
-      const remoteId = btn.getAttribute('data-remote-id') || btn.id.replace('post-comment-','');
-      const textarea = document.getElementById(`comment-input-${remoteId}`);
-      if(!textarea) return alert('Comment input not found.');
-      const raw = textarea.value.trim();
+    const remoteId = btn.getAttribute('data-remote-id') || btn.id.replace('post-comment-','');
+    const textarea = document.getElementById(`comment-input-${remoteId}`);
+    const list = document.getElementById(`comments-list-${remoteId}`);
+    // ensure event registration: remove existing listeners if any by cloning
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener('click', async (ev)=>{
+      const ta = document.getElementById(`comment-input-${remoteId}`);
+      if(!ta) return alert('Comment input not found.');
+      const raw = ta.value.trim();
       if(!raw) return alert('Write something');
-      // Taru prefix support for comments
       const parsed = parseTaruPrefix(raw);
       const finalText = parsed.text;
       const finalAuthor = parsed.author || 'Stacy';
-      // push to firestore under annotation doc
       try{
         await db.collection('annotations').doc(remoteId).collection('comments').add({ text: finalText, author: finalAuthor, created_at: firebase.firestore.FieldValue.serverTimestamp() });
         // append locally in UI (no date/time)
-        const list = document.getElementById(`comments-list-${remoteId}`);
-        if(list){
-          if(list.querySelector('.small')) list.innerHTML = '';
+        const listEl = document.getElementById(`comments-list-${remoteId}`);
+        if(listEl){
+          if(listEl.querySelector('.small')) listEl.innerHTML = '';
           const item = el('div',{className:'comment-item'}, `<div class="comment-author">${escapeHtml(finalAuthor)}</div><div style="margin-top:6px">${escapeHtml(finalText)}</div>`);
-          list.appendChild(item);
+          listEl.appendChild(item);
         }
-        textarea.value = '';
+        ta.value = '';
+        clearDraft(remoteId);
       }catch(e){
         console.error('post comment failed', e);
         alert('Comment failed');
       }
     });
+
+    // save drafts on input events
+    if(textarea){
+      // remove any existing handler by cloning and replacing (to avoid duplication)
+      const taClone = textarea.cloneNode(true);
+      textarea.parentNode.replaceChild(taClone, textarea);
+      taClone.addEventListener('input', (ev)=>{
+        const v = taClone.value;
+        const selStart = taClone.selectionStart ?? null;
+        const selEnd = taClone.selectionEnd ?? null;
+        saveDraftToStorage(remoteId, v, selStart, selEnd);
+      });
+      // also save caret position on keyup (for some browsers)
+      taClone.addEventListener('keyup', (ev)=>{
+        const v = taClone.value;
+        const selStart = taClone.selectionStart ?? null;
+        const selEnd = taClone.selectionEnd ?? null;
+        saveDraftToStorage(remoteId, v, selStart, selEnd);
+      });
+    }
   });
 
-  // after wiring, if any openCommentFor present, ensure comments loaded (safe-guard)
+  // after wiring, ensure comments loaded for openCommentFor
   if(openCommentFor){
     fetchAndRenderCommentsFor(openCommentFor);
   }
@@ -505,11 +614,39 @@ async function fetchAndRenderCommentsFor(remoteId){
   }
 }
 
-/* NOTE: keep old comment-modal functions unused (we now use inline comments) */
+/* Firestore helpers */
+async function pushAnnotationToFirestore(payload){
+  try{
+    const doc = {
+      file: normalizePath(payload.file),
+      start_idx: Number(payload.start_idx),
+      end_idx: Number(payload.end_idx),
+      text: payload.text || "",
+      note: payload.note || "",
+      author: payload.author || "Stacy",
+      created_at: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const ref = await db.collection('annotations').add(doc);
+    return { ok:true, id: ref.id };
+  }catch(e){
+    console.error('pushAnnotation error', e);
+    return { ok:false, error:e };
+  }
+}
 
-/* COMMENT modal logic placeholders removed (no floating modal) */
+async function updateAnnotationRemote(remoteId, updateObj){
+  try{
+    await db.collection('annotations').doc(remoteId).update(updateObj);
+    return { ok:true };
+  }catch(e){ console.warn('updateAnnotationRemote failed', e); return { ok:false, error:e }; }
+}
 
-/* selection -> display offset mapping helpers (unchanged robust implementations) */
+async function deleteAnnotationRemote(remoteId){
+  try{ await db.collection('annotations').doc(remoteId).delete(); return { ok:true }; }
+  catch(e){ console.warn('deleteAnnotationRemote failed', e); return { ok:false, error:e }; }
+}
+
+/* selection -> display offset mapping helpers (kept robust) */
 
 function collectTextNodes(root){
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
@@ -785,38 +922,6 @@ async function lookupDefinition(word){
   }
 }
 $('#close-define').addEventListener('click', ()=>{ $('#define-modal').style.display='none'; });
-
-/* Firestore helpers */
-async function pushAnnotationToFirestore(payload){
-  try{
-    const doc = {
-      file: normalizePath(payload.file),
-      start_idx: Number(payload.start_idx),
-      end_idx: Number(payload.end_idx),
-      text: payload.text || "",
-      note: payload.note || "",
-      author: payload.author || "Stacy",
-      created_at: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    const ref = await db.collection('annotations').add(doc);
-    return { ok:true, id: ref.id };
-  }catch(e){
-    console.error('pushAnnotation error', e);
-    return { ok:false, error:e };
-  }
-}
-
-async function updateAnnotationRemote(remoteId, updateObj){
-  try{
-    await db.collection('annotations').doc(remoteId).update(updateObj);
-    return { ok:true };
-  }catch(e){ console.warn('updateAnnotationRemote failed', e); return { ok:false, error:e }; }
-}
-
-async function deleteAnnotationRemote(remoteId){
-  try{ await db.collection('annotations').doc(remoteId).delete(); return { ok:true }; }
-  catch(e){ console.warn('deleteAnnotationRemote failed', e); return { ok:false, error:e }; }
-}
 
 /* Save & edit annotations (unchanged except Taru parse already in place) */
 $('#cancel-annotation').addEventListener('click', ()=>{ pendingSelection = null; $('#annotation-editor').style.display='none'; $('#annotation-editor').dataset.editing=''; $('#annotation-editor').dataset.remoteId=''; window.getSelection().removeAllRanges(); hideFabAndLookup(); });
