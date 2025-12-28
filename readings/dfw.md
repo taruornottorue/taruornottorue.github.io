@@ -1,655 +1,388 @@
-Note: This is the first chapter of DFW's Infinite Jest, not a short story.
-
-YEAR OF GLAD 
-
-
-I am seated in an office, surrounded by heads and bodies. My posture is consciously 
-congruent to the shape of my hard chair. This is a cold room in University 
-Administration, wood-walled. Remington-hung, double-windowed against the 
-November heat, insulated from Administrative sounds by the reception area outside, at 
-which Uncle Charles, Mr. deLint and I were lately received. 
-
-I am in here. 
-
-Three faces have resolved into place above summer-weight sportcoats and half- 
-Windsors across a polished pine conference table shiny with the spidered light of an 
-Arizona noon. These are three Deans — of Admissions, Academic Affairs, Athletic 
-Affairs. I do not know which face belongs to whom. 
-
-I believe I appear neutral, maybe even pleasant, though I've been coached to err on 
-the side of neutrality and not attempt what would feel to me like a pleasant expression 
-or smile. 
-
-I have committed to crossing my legs I hope carefully, ankle on knee, hands together 
-in the lap of my slacks. My fingers are mated into a mirrored series of what manifests, to 
-me, as the letter X. The interview room's other personnel include: the University's 
-Director of Composition, its varsity tennis coach, and Academy prorector Mr. A. deLint. 
-C.T. is beside me; the others sit, stand and stand, respectively, at the periphery of my 
-focus. The tennis coach jingles pocket-change. There is something vaguely digestive 
-about the room's odor. The high-traction sole of my complimentary Nike sneaker runs 
-parallel to the wobbling loafer of my mother's half-brother, here in his capacity as 
-Headmaster, sitting in the chair to what I hope is my immediate right, also facing Deans. 
-
-The Dean at left, a lean yellowish man whose fixed smile nevertheless has the 
-impermanent quality of something stamped into uncooperative material, is a 
-
-
-
-personality-type I've come lately to appreciate, the type who delays need of any 
-response from me by relating my side of the story for me, to me. Passed a packet of 
-computer-sheets by the shaggy lion of a Dean at center, he is speaking more or less to 
-these pages, smiling down. 
-
-'You are Harold Incandenza, eighteen, date of secondary-school graduation 
-approximately one month from now, attending the Enfield Tennis Academy, Enfield, 
-Massachusetts, a boarding school, where you reside.' His reading glasses are 
-rectangular, court-shaped, the sidelines at top and bottom. 'You are, according to Coach 
-White and Dean [unintelligible], a regionally, nationally, and continentally ranked junior 
-tennis player, a potential O.N.A.N.C.A.A. athlete of substantial promise, recruited by 
-Coach White via correspondence with Dr. Tavis here commencing... February of this 
-year.' The top page is removed and brought around neatly to the bottom of the sheaf, at 
-intervals. 'You have been in residence at the Enfield Tennis Academy since age seven.' 
-
-I am debating whether to risk scratching the right side of my jaw, where there is a 
-wen. 
-
-'Coach White informs our offices that he holds the Enfield Tennis Academy's program 
-and achievements in high regard, that the University of Arizona tennis squad has 
-profited from the prior matriculation of several former E.T.A. alumni, one of whom was 
-one Mr. Aubrey F. deLint, who appears also to be with you here today. Coach White and 
-his staff have given us —' 
-
-The yellow administrator's usage is on the whole undistinguished, though I have to 
-admit he's made himself understood. The Director of Composition seems to have more 
-than the normal number of eyebrows. The Dean at right is looking at my face a bit 
-strangely. 
-
-Uncle Charles is saying that though he can anticipate that the Deans might be 
-predisposed to weigh what he avers as coming from his possible appearance as a kind of 
-cheerleader for E.T.A., he can assure the assembled Deans that all this is true, and that 
-the Academy has presently in residence no fewer than a third of the continent's top 
-thirty juniors, in age brackets all across the board, and that I here, who go by 'Hal,' 
-usually, am 'right up there among the very cream.' Right and center Deans smile 
-professionally; the heads of deLint and the coach incline as the Dean at left clears his 
-throat: 
-
-'— belief that you could well make, even as a freshman, a real contribution to this 
-University's varsity tennis program. We are pleased,' he either says or reads, removing a 
-page, 'that a competition of some major sort here has brought you down and given us 
-the chance to sit down and chat together about your application and potential 
-recruitment and matriculation and scholarship.' 
-
-'I've been asked to add that Hal here is seeded third. Boys' 18-and-Under Singles, in 
-the prestigious WhataBurger Southwest Junior Invitational out at the Randolph Tennis 
-Center —' says what I infer is Athletic Affairs, his cocked head showing a freckled scalp. 
-
-'Out at Randolph Park, near the outstanding El Con Marriott,' C.T. inserts, 'a venue the 
-whole contingent's been vocal about finding absolutely top-hole thus far, which —' 
-
-'Just so. Chuck, and that according to Chuck here Hal has already justified his seed, 
-he's reached the semifinals as of this morning's apparently impressive win, and that he'll 
-
-
-
-be playing out at the Center again tomorrow, against the winner of a quarterfinal game 
-tonight, and so will be playing tomorrow at I believe scheduled for 0830 —' 
-
-'Try to get under way before the godawful heat out there. Though of course a dry 
-heat.' 
-
-and has apparently already qualified for this winter's Continental Indoors, up in 
-Edmonton, Kirk tells me —' cocking further to look up and left at the varsity coach, 
-whose smile's teeth are radiant against a violent sunburn — 'Which is something 
-indeed.' He smiles, looking at me. 'Did we get all that right Hal.' 
-
-C.T. has crossed his arms casually; their triceps' flesh is webbed with mottle in the air- 
-conditioned sunlight. 'You sure did. Bill.' He smiles. The two halves of his mustache 
-never quite match. 'And let me say if I may that Hal's excited, excited to be invited for 
-the third year running to the Invitational again, to be back here in a community he has 
-real affection for, to visit with your alumni and coaching staff, to have already justified 
-his high seed in this week's not unstiff competition, to as they say still be in it without 
-the fat woman in the Viking hat having sung, so to speak, but of course most of all to 
-have a chance to meet you gentlemen and have a look at the facilities here. Everything 
-here is absolutely top-slot, from what he's seen.' 
-
-There is a silence. DeLint shifts his back against the room's panelling and recenters his 
-weight. My uncle beams and straightens a straight watchband. 62.5% of the room's 
-faces are directed my way, pleasantly expectant. My chest bumps like a dryer with 
-shoes in it. I compose what I project will be seen as a smile. I turn this way and that, 
-slightly, sort of directing the expression to everyone in the room. 
-
-There is a new silence. The yellow Dean's eyebrows go circumflex. The two other 
-Deans look to the Director of Composition. The tennis coach has moved to stand at the 
-broad window, feeling at the back of his crewcut. Uncle Charles strokes the forearm 
-above his watch. Sharp curved palm-shadows move slightly over the pine table's shine, 
-the one head's shadow a black moon. 
-
-'Is Hal all right. Chuck?' Athletic Affairs asks. 'Hal just seemed to... well, grimace. Is he 
-in pain? Are you in pain, son?' 
-
-'Hal's right as rain,' smiles my uncle, soothing the air with a casual hand. 'Just a bit of a 
-let's call it maybe a facial tic, slightly, at all the adrenaline of being here on your 
-impressive campus, justifying his seed so far without dropping a set, receiving that 
-official written offer of not only waivers but a living allowance from Coach White here, 
-on Pac 10 letterhead, being ready in all probability to sign a National Letter of Intent 
-right here and now this very day, he's indicated to me.' C.T. looks to me, his look 
-horribly mild. I do the safe thing, relaxing every muscle in my face, emptying out all 
-expression. I stare carefully into the Kekulean knot of the middle Dean's necktie. 
-
-My silent response to the expectant silence begins to affect the air of the room, the 
-bits of dust and sportcoat-lint stirred around by the AC's vents dancing jaggedly in the 
-slanted plane of windowlight, the air over the table like the sparkling space just above a 
-fresh-poured seltzer. The coach, in a slight accent neither British nor Australian, is telling 
-C.T. that the whole application-interface process, while usually just a pleasant formality, 
-is probably best accentuated by letting the applicant speak up for himself. Right and 
-center Deans have inclined together in soft conference, forming a kind of tepee of skin 
-
-
-
-and hair. I presume it's probably facilitate that the tennis coach mistook for accentuate, 
-though accelerate, while clunkier than facilitate, is from a phonetic perspective more 
-sensible, as a mistake. The Dean with the flat yellow face has leaned forward, his lips 
-drawn back from his teeth in what I see as concern. His hands come together on the 
-conference table's surface. His own fingers look like they mate as my own four-X series 
-dissolves and I hold tight to the sides of my chair. 
-
-We need candidly to chat re potential problems with my application, they and I, he is 
-beginning to say. He makes a reference to candor and its value. 
-
-'The issues my office faces with the application materials on file from you, Hal, involve 
-some test scores.' He glances down at a colorful sheet of standardized scores in the 
-trench his arms have made. 'The Admissions staff is looking at standardized test scores 
-from you that are, as I'm sure you know and can explain, are, shall we say... subnormal.' 
-I'm to explain. 
-
-It's clear that this really pretty sincere yellow Dean at left is Admissions. And surely the 
-little aviarian figure at right is Athletics, then, because the facial creases of the shaggy 
-middle Dean are now pursed in a kind of distanced affront, an I'm-eating-something- 
-that-makes-me-really-appreciate-the-presence-of-whatever-l'm-drinking-along-with-it 
-look that spells professionally Academic reservations. An uncomplicated loyalty to 
-standards, then, at center. My uncle looks to Athletics as if puzzled. He shifts slightly in 
-his chair. 
-
-The incongruity between Admissions's hand- and face-color is almost wild, '—verbal 
-scores that are just quite a bit closer to zero than we're comfortable with, as against a 
-secondary-school transcript from the institution where both your mother and her 
-brother are administrators —' reading directly out of the sheaf inside his arms' ellipse — 
-'that this past year, yes, has fallen off a bit, but by the word I mean "fallen off" to 
-outstanding from three previous years of frankly incredible.' 
-
-'Off the charts.' 
-
-'Most institutions do not even have grades of A with multiple pluses after it,' says the 
-Director of Composition, his expression impossible to interpret. 
-
-'This kind of... how shall I put it... incongruity,' Admissions says, his expression frank 
-and concerned, 'I've got to tell you sends up a red flag of potential concern during the 
-admissions process.' 
-
-'We thus invite you to explain the appearance of incongruity if not outright 
-shenanigans.' Students has a tiny piping voice that's absurd coming out of a face this big. 
-
-'Surely by incredible you meant very very very impressive, as opposed to literally 
-quote "incredible," surely,' says C.T., seeming to watch the coach at the window 
-massaging the back of his neck. The huge window gives out on nothing more than 
-dazzling sunlight and cracked earth with heat-shimmers over it. 
-
-'Then there is before us the matter of not the required two but nine separate 
-application essays, some of which of nearly monograph-length, each without exception 
-being —' different sheet — 'the adjective various evaluators used was quote "stellar" —' 
-
-Dir. of Comp.: 'I made in my assessment deliberate use of lapidary and effete.' 
-
-'— but in areas and with titles. I'm sure you recall quite well, Hal: "Neoclassical 
-Assumptions in Contemporary Prescriptive Grammar," "The Implications of Post-Fourier 
-
-
-
-Transformations for a Holographically Mimetic Cinema," "The Emergence of Heroic 
-Stasis in Broadcast Entertainment" —' 
-
-' "Montague Grammar and the Semantics of Physical Modality"?' 
-
-' "A Man Who Began to Suspect He Was Made of Glass"?' 
-
-' "Tertiary Symbolism in Justinian Erotica"?' 
-
-Now showing broad expanses of recessed gum. 'Suffice to say that there's some frank 
-and candid concern about the recipient of these unfortunate test scores, though 
-perhaps explainable test scores, being these essays' sole individual author.' 
-
-'I'm not sure Hal's sure just what's being implied here,' my uncle says. The Dean at 
-center is fingering his lapels as he interprets distasteful computed data. 
-
-'What the University is saying here is that from a strictly academic point of view there 
-are admission problems that Hal needs to try to help us iron out. A matriculant's first 
-role at the University is and must be as a student. We couldn't admit a student we have 
-reason to suspect can't cut the mustard, no matter how much of an asset he might be 
-on the field.' 
-
-'Dean Sawyer means the court, of course. Chuck,' Athletic Affairs says, head severely 
-cocked so he's including the White person behind him in the address somehow. 'Not to 
-mention O.N.A.N.C.A.A. regulations and investigators always snuffling around for some 
-sort of whiff of the smell of impropriety.' 
-
-The varsity tennis coach looks at his own watch. 
-
-'Assuming these board scores are accurate reflectors of true capacity in this case,' 
-Academic Affairs says, his high voice serious and sotto, still looking at the file before him 
-as if it were a plate of something bad. Til tell you right now my opinion is it wouldn't be 
-fair. It wouldn't be fair to the other applicants. Wouldn't be fair to the University 
-community.' He looks at me. 'And it'd be especially unfair to Hal himself. Admitting a 
-boy we see as simply an athletic asset would amount to just using that boy. We're under 
-myriad scrutiny to make sure we're not using anybody. Your board results, son, indicate 
-that we could be accused of using you.' 
-
-Uncle Charles is asking Coach White to ask the Dean of Athletic Affairs whether the 
-weather over scores would be as heavy if I were, say, a revenue-raising football prodigy. 
-The familiar panic at feeling misperceived is rising, and my chest bumps and thuds. I 
-expend energy on remaining utterly silent in my chair, empty, my eyes two great pale 
-zeros. People have promised to get me through this. 
-
-Uncle C.T., though, has the pinched look of the cornered. His voice takes on an odd 
-timbre when he's cornered, as if he were shouting as he receded. 'Hal's grades at E.T.A., 
-which is I should stress an Academy, not simply a camp or factory, accredited by both 
-the Commonwealth of Massachusetts and the North American Sports Academy 
-Association, it's focused on the total needs of the player and student, founded by a tow¬ 
-ering intellectual figure whom I hardly need name, here, and based by him on the 
-rigorous Oxbridge Quadrivium-Trivium curricular model, a school fully staffed and 
-equipped, by a fully certified staff, should show that my nephew here can cut just about 
-any Pac 10 mustard that needs cutting, and that —' 
-
-DeLint is moving toward the tennis coach, who is shaking his head. 
-
-'— would be able to see a distinct flavor of minor-sport prejudice about this whole 
-
-
-
-thing,' C.T. says, crossing and recrossing his legs as I listen, composed and staring. 
-
-The room's carbonated silence is now hostile. 'I think it's time to let the actual 
-applicant himself speak out on his own behalf,' Academic Affairs says very quietly. 'This 
-seems somehow impossible with you here, sir.' 
-
-Athletics smiles tiredly under a hand that massages the bridge of his nose. 'Maybe 
-you'd excuse us for a moment and wait outside. Chuck.' 
-
-'Coach White could accompany Mr. Tavis and his associate out to reception,' the 
-yellow Dean says, smiling into my unfocused eyes. 
-
-'— led to believe this had all been ironed out in advance, from the —' C.T. is saying as 
-he and deLint are shown to the door. The tennis coach extends a hypertrophied arm. 
-Athletics says 'We're all friends and colleagues here.' 
-
-This is not working out. It strikes me that EXIT signs would look to a native speaker of 
-Latin like red-lit signs that say HE LEAVES. I would yield to the urge to bolt for the door 
-ahead of them if I could know that bolting for the door is what the men in this room 
-would see. DeLint is murmuring something to the tennis coach. Sounds of keyboards, 
-phone consoles as the door is briefly opened, then firmly shut. I am alone among 
-administrative heads. 
-
-'— offense intended to anyone,' Athletic Affairs is saying, his sportcoat tan and his 
-necktie insigniated in tiny print — 'beyond just physical abilities out there in play, which 
-believe me we respect, wont, believe me.' 
-
-'— question about it we wouldn't be so anxious to chat with you directly, see?' 
-
-'— that we've known in processing several prior applications through Coach White's 
-office that the Enfield School is operated, however impressively, by close relations of 
-first your brother, who I can still remember the way White's predecessor Maury Klamkin 
-wooed that kid, so that grades' objectivity can be all too easily called into question —' 
-
-'By whomsoever's calling — N.A.A.U.P., ill-willed Pac 10 programs, O.N.A.N.C.A.A. —' 
-The essays are old ones, yes, but they are mine; de moi. But they are, yes, old, not 
-quite on the application's instructed subject of Most Meaningful Educational Experience 
-Ever. If I'd done you one from the last year, it would look to you like some sort of 
-infant's random stabs on a keyboard, and to you, who use whomsoever as a subject. And 
-in this new smaller company, the Director of Composition seems abruptly to have 
-actuated, emerged as both the Alpha of the pack here and way more effeminate than 
-he'd seemed at first, standing hip-shot with a hand on his waist, walking with a roll to 
-his shoulders, jingling change as he pulls up his pants as he slides into the chair still 
-warm from C.T.'s bottom, crossing his legs in a way that inclines him well into my 
-personal space, so that I can see multiple eyebrow-tics and capillary webs in the oysters 
-below his eyes and smell fabric-softener and the remains of a breath-mint turned sour. 
-
-'...a bright, solid, but very shy boy, we know about your being very shy, Kirk White's 
-told us what your athletically built if rather stand-offish younger instructor told him,' the 
-Director says softly, cupping what I feel to be a hand over my sportcoat's biceps (surely 
-not), 'who simply needs to swallow hard and trust and tell his side of the story to these 
-gentlemen who bear no maliciousness none at all but are doing our jobs and trying to 
-look out for everyone's interests at the same time.' 
-
-I can picture deLint and White sitting with their elbows on their knees in the 
-
-
-
-defecatory posture of all athletes at rest, deLint staring at his huge thumbs, while C.T. in 
-the reception area paces in a tight ellipse, speaking into his portable phone. I have been 
-coached for this like a Don before a RICO hearing. A neutral and affectless silence. The 
-sort of all-defensive game Schtitt used to have me play: the best defense: let everything 
-bounce off you; do nothing. I'd tell you all you want and more, if the sounds I made 
-could be what you hear. 
-
-Athletics with his head out from under his wing: to avoid admission procedures 
-
-that could be seen as primarily athletics-oriented. It could be a mess, son.' 
-
-'Bill means the appearance, not necessarily the real true facts of the matter, which 
-you alone can fill in,' says the Director of Composition. 
-
-'— the appearance of the high athletic ranking, the subnormal scores, the over¬ 
-academic essays, the incredible grades vortexing out of what could be seen as a 
-nepotistic situation.' 
-
-The yellow Dean has leaned so far forward that his tie is going to have a horizontal 
-dent from the table-edge, his face sallow and kindly and no-shit-whatever: 
-
-'Look here, Mr. Incandenza, Hal, please just explain to me why we couldn't be accused 
-of using you, son. Why nobody could come and say to us, why, look here. University of 
-Arizona, here you are using a boy for just his body, a boy so shy and withdrawn he won't 
-speak up for himself, a jock with doctored marks and a store-bought application.' 
-
-The Brewster's-Angle light of the tabletop appears as a rose flush behind my closed 
-lids. I cannot make myself understood. 'I am not just a jock,' I say slowly. Distinctly. 'My 
-transcript for the last year might have been dickied a bit, maybe, but that was to get me 
-over a rough spot. The grades prior to that are de moi.' My eyes are closed; the room is 
-silent. 'I cannot make myself understood, now.' I am speaking slowly and distinctly. 'Call 
-it something I ate.' 
-
-It's funny what you don't recall. Our first home, in the suburb of Weston, which I 
-barely remember — my eldest brother Orin says he can remember being in the home's 
-backyard with our mother in the early spring, helping the Moms till some sort of garden 
-out of the cold yard. March or early April. The garden's area was a rough rectangle laid 
-out with Popsicle sticks and twine. Orin was removing rocks and hard clods from the 
-Moms's path as she worked the rented Rototiller, a wheelbarrow-shaped, gas-driven 
-thing that roared and snorted and bucked and he remembers seemed to propel the 
-Moms rather than vice versa, the Moms very tall and having to stoop painfully to hold 
-on, her feet leaving drunken prints in the tilled earth. He remembers that in the middle 
-of the tilling I came tear-assing out the door and into the backyard wearing some sort of 
-fuzzy red Pooh-wear, crying, holding out something he said was really unpleasant- 
-looking in my upturned palm. He says I was around five and crying and was vividly red in 
-the cold spring air. I was saying something over and over; he couldn't make it out until 
-our mother saw me and shut down the tiller, ears ringing, and came over to see what I 
-was holding out. This turned out to have been a large patch of mold — Orin posits from 
-some dark corner of the Weston home's basement, which was warm from the furnace 
-and flooded every spring. The patch itself he describes as horrific: darkly green, glossy, 
-vaguely hirsute, speckled with parasitic fungal points of yellow, orange, red. Worse, they 
-
-
-
-could see that the patch looked oddly incomplete, gnawed-on; and some of the 
-nauseous stuff was smeared around my open mouth. 'I ate this,' was what I was saying. I 
-held the patch out to the Moms, who had her contacts out for the dirty work, and at 
-first, bending way down, saw only her crying child, hand out, proffering; and in that 
-most maternal of reflexes she, who feared and loathed more than anything spoilage and 
-filth, reached to take whatever her baby held out — as in how many used heavy 
-Kleenex, spit-back candies, wads of chewed-out gum in how many theaters, airports, 
-backseats, tournament lounges? 0. stood there, he says, hefting a cold clod, playing 
-with the Velcro on his puffy coat, watching as the Moms, bent way down to me, hand 
-reaching, her lowering face with its presbyopic squint, suddenly stopped, froze, 
-beginning to I.D. what it was I held out, countenancing evidence of oral contact with 
-same. He remembers her face as past describing. Her outstretched hand, still 
-Rototrembling, hung in the air before mine. 
-
-'I ate this,' I said. 
-
-'Pardon me?' 
-
-0. says he can only remember (sic) saying something caustic as he limboed a crick out 
-of his back. He says he must have felt a terrible impending anxiety. The Moms refused 
-ever even to go into the damp basement. I had stopped crying, he remembers, and 
-simply stood there, the size and shape of a hydrant, in red PJ's with attached feet, 
-holding out the mold, seriously, like the report of some kind of audit. 
-
-0. says his memory diverges at this point, probably as a result of anxiety. In his first 
-memory, the Moms's path around the yard is a broad circle of hysteria: 
-
-'God!' she calls out. 
-
-'Help! My son ate this!' she yells in Orin's second and more fleshed-out recollection, 
-yelling it over and over, holding the speckled patch aloft in a pincer of fingers, running 
-around and around the garden's rectangle while 0. gaped at his first real sight of adult 
-hysteria. Suburban neighbors' heads appeared in windows and over the fences, looking. 
-0. remembers me tripping over the garden's laid-out twine, getting up dirty, crying, 
-trying to follow. 
-
-'God! Help! My son ate this! Help!' she kept yelling, running a tight pattern just inside 
-the square of string; and my brother Orin remembers noting how even in hysterical 
-trauma her flight-lines were plumb, her footprints Native-American-straight, her turns, 
-inside the ideogram of string, crisp and martial, crying 'My son ate this! Help!' and 
-lapping me twice before the memory recedes. 
-
-'My application's not bought,' I am telling them, calling into the darkness of the red 
-cave that opens out before closed eyes. 'I am not just a boy who plays tennis. I have an 
-intricate history. Experiences and feelings. I'm complex. 
-
-'I read,' I say. 'I study and read. I bet I've read everything you've read. Don't think I 
-haven't. I consume libraries. I wear out spines and ROM-drives. I do things like get in a 
-taxi and say, "The library, and step on it." My instincts concerning syntax and mechanics 
-are better than your own, I can tell, with due respect. 
-
-'But it transcends the mechanics. I'm not a machine. I feel and believe. I have opinions. 
-Some of them are interesting. I could, if you'd let me, talk and talk. Let's talk about 
-
-
-
-anything. I believe the influence of Kierkegaard on Camus is underestimated. I believe 
-Dennis Gabor may very well have been the Antichrist. I believe Hobbes is just Rousseau 
-in a dark mirror. I believe, with Hegel, that transcendence is absorption. I could interface 
-you guys right under the table,' I say. Tm not just a creatus, manufactured, conditioned, 
-bred for a function.' 
-
-I open my eyes. 'Please don't think I don't care.' 
-
-I look out. Directed my way is horror. I rise from the chair. I see jowls sagging, 
-eyebrows high on trembling foreheads, cheeks bright-white. The chair recedes below 
-me. 
-
-'Sweet mother of Christ,' the Director says. 
-
-Tm fine,' I tell them, standing. From the yellow Dean's expression, there's a brutal 
-wind blowing from my direction. Academics' face has gone instantly old. Eight eyes have 
-become blank discs that stare at whatever they see. 
-
-'Good God,' whispers Athletics. 
-
-'Please don't worry,' I say. 'I can explain.' I soothe the air with a casual hand. 
-
-Both my arms are pinioned from behind by the Director of Comp., who wrestles me 
-roughly down, on me with all his weight. I taste floor. 
-
-'What's wrong?' 
-
-I say 'Nothing is wrong.' 
-
-'It's all right! I'm here!' the Director is calling into my ear. 
-
-'Get help!' cries a Dean. 
-
-My forehead is pressed into parquet I never knew could be so cold. I am arrested. I try 
-to be perceived as limp and pliable. My face is mashed flat; Comp.'s weight makes it 
-hard to breathe. 
-
-'Try to listen,' I say very slowly, muffled by the floor. 
-
-'What in God's name are those...,' one Dean cries shrilly, '...those sounds?' 
-
-There are clicks of a phone console's buttons, shoes' heels moving, pivoting, a sheaf of 
-flimsy pages falling. 
-
-'God!' 
-
-'Help!' 
-
-The door's base opens at the left periphery: a wedge of halogen hall-light, white 
-sneakers and a scuffed Nunn Bush. 'Let him up!' That's deLint. 
-
-'There is nothing wrong,' I say slowly to the floor. Tm in here.' 
-
-I'm raised by the crutches of my underarms, shaken toward what he must see as calm 
-by a purple-faced Director: 'Get a grip, son!' 
-
-DeLint at the big man's arm: 'Stop it!' 
-
-'I am not what you see and hear.' 
-
-Distant sirens. A crude half nelson. Forms at the door. A young Hispanic woman holds 
-her palm against her mouth, looking. 
-
-Tm not,' I say. 
-
-You have to love old-fashioned men's rooms: the citrus scent of deodorant disks in the 
-long porcelain trough; the stalls with wooden doors in frames of cool marble; these thin 
-sinks in rows, basins supported by rickety alphabets of exposed plumbing; mirrors over 
-metal shelves; behind all the voices the slight sound of a ceaseless trickle, inflated by 
-
-
-
-echo against wet porcelain and a cold tile floor whose mosaic pattern looks almost 
-Islamic at this close range. 
-
-The disorder I've caused revolves all around. I've been half-dragged, still pinioned, 
-through a loose mob of Administrative people by the Comp. Director — who appears to 
-have thought variously that I am having a seizure (prying open my mouth to check for a 
-throat clear of tongue), that I am somehow choking (a textbook Heimlich that left me 
-whooping), that I am psychotically out of control (various postures and grips designed to 
-transfer that control to him) — while about us roil deLint, trying to restrain the 
-Director's restraint of me, the varsity tennis coach restraining deLint, my mother's half- 
-brother speaking in rapid combinations of polysyllables to the trio of Deans, who 
-variously gasp, wring hands, loosen neckties, waggle digits in C.T.'s face, and make poses 
-with sheafs of now-pretty-clearly-superfluous application forms. 
-
-I am rolled over supine on the geometric tile. I am concentrating docilely on the 
-question why U.S. restrooms always appear to us as infirmaries for public distress, the 
-place to regain control. My head is cradled in a knelt Director's lap, which is soft, my 
-face being swabbed with dusty-brown institutional paper towels he received from some 
-hand out of the crowd overhead, staring with all the blankness I can summon into his 
-jowls' small pocks, worst at the blurred jawline, of scarring from long-ago acne. Uncle 
-Charles, a truly unparalleled slinger of shit, is laying down an enfilade of same, trying to 
-mollify men who seem way more in need of a good brow-mopping than I. 
-
-'He's fine,' he keeps saying. 'Look at him, calm as can be, lying there.' 
-
-'You didn't see what happened in there,' a hunched Dean responds through a face 
-webbed with fingers. 
-
-'Excited, is all he gets, sometimes, an excitable kid, impressed with —' 
-
-'But the sounds he made.' 
-
-'Undescribable.' 
-
-'Like an animal.' 
-
-'Subanimalistic noises and sounds.' 
-
-'Nor let's not forget the gestures.' 
-
-'Have you ever gotten help for this boy Dr. Tavis?' 
-
-'Like some sort of animal with something in its mouth.' 
-
-'This boy is damaged.' 
-
-'Like a stick of butter being hit with a mallet.' 
-
-'A writhing animal with a knife in its eye.' 
-
-'What were you possibly about, trying to enroll this —' 
-
-'And his arms.' 
-
-'You didn't see it, Tavis. His arms were —' 
-
-'Flailing. This sort of awful reaching drumming wriggle. Waggling,' the group looking 
-briefly at someone outside my sight trying to demonstrate something. 
-
-'Like a time-lapse, a flutter of some sort of awful... growth.' 
-
-'Sounded most of all like a drowning goat. A goat, drowning in something viscous.' 
-
-'This strangled series of bleats and —' 
-
-'Yes they waggled.' 
-
-'So suddenly a bit of excited waggling's a crime, now?' 
-
-
-
-'You, sir, are in trouble. You are in trouble.' 
-
-'His face. As if he was strangling. Burning. I believe I've seen a vision of hell.' 
-
-'He has some trouble communicating, he's communicatively challenged, no one's 
-denying that.' 
-
-'The boy needs care.' 
-
-'Instead of caring for the boy you send him here to enroll, compete?' 
-
-'Hal?' 
-
-'You have not in your most dreadful fantasies dreamt of the amount of trouble you 
-have bought yourself. Dr. so-called Headmaster, educator.' 
-
-'...were given to understand this was all just a formality. You took him aback, is all. Shy 
-
-_i 
-
-'And you. White. You sought to recruit him!' 
-
-'— and terribly impressed and excited, in there, without us, his support system, whom 
-you asked to leave, which if you'd —' 
-
-'I'd only seen him play. On court he's gorgeous. Possibly a genius. We had no idea. The 
-brother's in the bloody NFL for God's sake. Here's a top player, we thought, with 
-Southwest roots. His stats were off the chart. We watched him through the whole 
-WhataBurger last fall. Not a waggle or a noise. We were watching ballet out there, a 
-mate remarked, after.' 
-
-'Damn right you were watching ballet out there. White. This boy is a balletic athlete, a 
-player.' 
-
-'Some kind of athletic savant then. Balletic compensation for deep problems which 
-you sir choose to disguise by muzzling the boy in there.' An expensive pair of Brazilian 
-espadrilles goes by on the left and enters a stall, and the espadrilles come around and 
-face me. The urinal trickles behind the voices' small echoes. 
-
-'— haps we'll just be on our way,' C.T. is saying. 
-
-'The integrity of my sleep has been forever compromised, sir.' 
-
-'— think you could pass off a damaged applicant, fabricate credentials and shunt him 
-through a kangaroo-interview and inject him into all the rigors of college life?' 
-
-'Hal here functions, you ass. Given a supportive situation. He's fine when he's by 
-himself. Yes he has some trouble with excitability in conversation. Did you once hear 
-him try to deny that?' 
-
-'We witnessed something only marginally mammalian in there, sir.' 
-
-'Like hell. Have a look. How's the excitable little guy doing down there, Aubrey, does it 
-look to you?' 
-
-'You, sir, are quite possibly ill. This affair is not concluded.' 
-
-'What ambulance? Don't you guys listen? I'm telling you there's —' 
-
-'Hal? Hal?' 
-
-'Dope him up, seek to act as his mouthpiece, muzzling, and now he lies there 
-catatonic, staring.' 
-
-The crackle of deLint's knees. 'Hal?' 
-
-'— inflate this publicly in any distorted way. The Academy has distinguished alumni, 
-litigators at counsel. Hal here is provably competent. Credentials out the bazoo. Bill. The 
-boy reads like a vacuum. Digests things.' 
-
-
-
-I simply lie there, listening, smelling the paper towel, watching an espadrille pivot. 
-
-'There's more to life than sitting there interfacing, it might be a newsflash to you.' 
-
-And who could not love that special and leonine roar of a public toilet?
+Note: This is the second chapter of Infinite Jest, not a short story.
+
+YEAR OF THE DEPEND ADULT UNDERGARMENT 
+
+
+Where was the woman who said she'd come. She said she would come. Erdedy 
+thought she'd have come by now. He sat and thought. He was in the living room. When 
+he started waiting one window was full of yellow light and cast a shadow of light across 
+the floor and he was still sitting waiting as that shadow began to fade and was 
+intersected by a brightening shadow from a different wall's window. There was an insect 
+on one of the steel shelves that held his audio equipment. The insect kept going in and 
+out of one of the holes on the girders that the shelves fit into. The insect was dark and 
+had a shiny case. He kept looking over at it. Once or twice he started to get up to go 
+over closer to look at it, but he was afraid that if he came closer and saw it closer he 
+would kill it, and he was afraid to kill it. He did not use the phone to call the woman 
+
+
+
+who'd promised to come because if he tied up the line and if it happened to be the time 
+when maybe she was trying to call him he was afraid she would hear the busy signal and 
+think him disinterested and get angry and maybe take what she'd promised him 
+somewhere else. 
+
+She had promised to get him a fifth of a kilogram of marijuana, 200 grams of unusually 
+good marijuana, for $1250 U.S. He had tried to stop smoking marijuana maybe 70 or 80 
+times before. Before this woman knew him. She did not know he had tried to stop. He 
+always lasted a week, or two weeks, or maybe two days, and then he'd think and decide 
+to have some in his home one more last time. One last final time he'd search out 
+someone new, someone he hadn't already told that he had to stop smoking dope and 
+please under no circumstances should they procure him any dope. It had to be a third 
+party, because he'd told every dealer he knew to cut him off. And the third party had to 
+be someone all-new, because each time he got some he knew this time had to be the 
+last time, and so told them, asked them, as a favor, never to get him any more, ever. 
+And he never asked a person again once he'd told them this, because he was proud, and 
+also kind, and wouldn't put anyone in that kind of contradictory position. Also he 
+considered himself creepy when it came to dope, and he was afraid that others would 
+see that he was creepy about it as well. He sat and thought and waited in an uneven X 
+of light through two different windows. Once or twice he looked at the phone. The 
+insect had disappeared back into the hole in the steel girder a shelf fit into. 
+
+She'd promised to come at one certain time, and it was past that time. Finally he gave 
+in and called her number, using just audio, and it rang several times, and he was afraid 
+of how much time he was taking tying up the line and he got her audio answering 
+device, the message had a snatch of ironic pop music and her voice and a male voice 
+together saying we'll call you back, and the 'we' made them sound like a couple, the 
+man was a handsome black man who was in law school, she designed sets, and he didn't 
+leave a message because he didn't want her to know how much now he felt like he 
+needed it. He had been very casual about the whole thing. She said she knew a guy just 
+over the river in Allston who sold high-resin dope in moderate bulk, and he'd yawned 
+and said well, maybe, well, hey, why not, sure, special occasion, I haven't bought any in I 
+don't know how long. She said he lived in a trailer and had a harelip and kept snakes and 
+had no phone, and was basically just not what you'd call a pleasant or attractive person 
+at all, but the guy in Allston frequently sold dope to theater people in Cambridge, and 
+had a devoted following. He said he was trying to even remember when was the last 
+time he'd bought any, it had been so long. He said he guessed he'd have her get a 
+decent amount, he said he'd had some friends call him in the recent past and ask if he 
+could get them some. He had this thing where he'd frequently say he was getting dope 
+mostly for friends. Then if the woman didn't have it when she said she'd have it for him 
+and he became anxious about it he could tell the woman that it was his friends who 
+were becoming anxious, and he was sorry to bother the woman about something so 
+casual but his friends were anxious and bothering him about it and he just wanted to 
+know what he could maybe tell them. He was caught in the middle, is how he would 
+represent it. He could say his friends had given him their money and were now anxious 
+and exerting pressure, calling and bothering him. This tactic was not possible with this 
+
+
+
+woman who'd said she'd come with it because he hadn't yet given her the $1250. She 
+would not let him. She was well off. Her family was well off, she'd said to explain how 
+her condominium was as nice as it was when she worked designing sets for a Cambridge 
+theater company that seemed to do only German plays, dark smeary sets. She didn't 
+care much about the money, she said she'd cover the cost herself when she got out to 
+the Allston Spur to see whether the guy was at home in the trailer as she was certain he 
+would be this particular afternoon, and he could just reimburse her when she brought it 
+to him. This arrangement, very casual, made him anxious, so he'd been even more 
+casual and said sure, fine, whatever. Thinking back, he was sure he'd said whatever, 
+which in retrospect worried him because it might have sounded as if he didn't care at 
+all, not at all, so little that it wouldn't matter if she forgot to get it or call, and once he'd 
+made the decision to have marijuana in his home one more time it mattered a lot. It 
+mattered a lot. He'd been too casual with the woman, he should have made her take 
+$1250 from him up front, claiming politeness, claiming he didn't want to inconvenience 
+her financially over something so trivial and casual. Money created a sense of obligation, 
+and he should have wanted the woman to feel obliged to do what she'd said, once what 
+she'd said she'd do had set him off inside. Once he'd been set off inside, it mattered so 
+much that he was somehow afraid to show how much it mattered. Once he had asked 
+her to get it, he was committed to several courses of action. The insect on the shelf was 
+back. It didn't seem to do anything. It just came out of the hole in the girder onto the 
+edge of the steel shelf and sat there. After a while it would disappear back into the hole 
+in the girder, and he was pretty sure it didn't do anything in there either. He felt similar 
+to the insect inside the girder his shelf was connected to, but was not sure just how he 
+was similar. Once he'd decided to own marijuana one more last time, he was committed 
+to several courses of action. He had to modem in to the agency and say that there was 
+an emergency and that he was posting an e-note on a colleague's TP asking her to cover 
+his calls for the rest of the week because he'd be out of contact for several days due to 
+this emergency. He had to put an audio message on his answering device saying that 
+starting that afternoon he was going to be unreachable for several days. He had to clean 
+his bedroom, because once he had dope he would not leave his bedroom except to go 
+to the refrigerator and the bathroom, and even then the trips would be very quick. He 
+had to throw out all his beer and liquor, because if he drank alcohol and smoked dope at 
+the same time he would get dizzy and ill, and if he had alcohol in the house he could not 
+be relied on not to drink it once he started smoking dope. He'd had to do some 
+shopping. He'd had to lay in supplies. Now just one of the insect's antennae was pro¬ 
+truding from the hole in the girder. It protruded, but it did not move. He had had to buy 
+soda, Oreos, bread, sandwich meat, mayonnaise, tomatoes, M&M's, Almost Home 
+cookies, ice cream, a Pepperidge Farm frozen chocolate cake, and four cans of canned 
+chocolate frosting to be eaten with a large spoon. He'd had to log an order to rent film 
+cartridges from the InterLace entertainment outlet. He'd had to buy antacids for the 
+discomfort that eating all he would eat would cause him late at night. He'd had to buy a 
+new bong, because each time he finished what simply had to be his last bulk-quantity of 
+marijuana he decided that that was it, he was through, he didn't even like it anymore, 
+this was it, no more hiding, no more imposing on his colleagues and putting different 
+
+
+
+messages on his answering device and moving his car away from his condominium and 
+closing his windows and curtains and blinds and living in quick vectors between his 
+bedroom's InterLace teleputer's films and his refrigerator and his toilet, and he would 
+take the bong he'd used and throw it away wrapped in several plastic shopping bags. His 
+refrigerator made its own ice in little cloudy crescent blocks and he loved it, when he 
+had dope in his home he always drank a great deal of cold soda and ice water. His 
+tongue almost swelled at just the thought. He looked at the phone and the clock. He 
+looked at the windows but not at the foliage and blacktop driveway beyond the 
+windows. He had already vacuumed his Venetian blinds and curtains, everything was 
+ready to be shut down. Once the woman who said she'd come had come, he would shut 
+the whole system down. It occurred to him that he would disappear into a hole in a 
+girder inside him that supported something else inside him. He was unsure what the 
+thing inside him was and was unprepared to commit himself to the course of action that 
+would be required to explore the question. It was now almost three hours past the time 
+when the woman had said she would come. A counselor, Randi, with an i, with a 
+mustache like a Mountie, had told him in the outpatient treatment program he'd gone 
+through two years ago that he seemed insufficiently committed to the course of action 
+that would be required to remove substances from his lifestyle. He'd had to buy a new 
+bong at Bogart's in Porter Square, Cambridge because whenever he finished the last of 
+the substances on hand he always threw out all his bongs and pipes, screens and tubes 
+and rolling papers and roach clips, lighters and Visine and Pepto-Bismol and cookies and 
+frosting, to eliminate all future temptation. He always felt a sense of optimism and firm 
+resolve after he'd discarded the materials. He'd bought the new bong and laid in fresh 
+supplies this morning, getting back home with everything well before the woman had 
+said she would come. He thought of the new bong and new little packet of round brass 
+screens in the Bogart's bag on his kitchen table in the sunlit kitchen and could not 
+remember what color this new bong was. The last one had been orange, the one before 
+that a dusky rose color that had turned muddy at the bottom from resin in just four 
+days. He could not remember the color of this new last and final bong. He considered 
+getting up to check the color of the bong he'd be using but decided that obsessive 
+checking and convulsive movements could compromise the atmosphere of casual calm 
+he needed to maintain while he waited, protruding but not moving, for the woman he'd 
+met at a design session for his agency's small campaign for her small theater company's 
+new Wedekind festival, while he waited for this woman, with whom he'd had 
+intercourse twice, to honor her casual promise. He tried to decide whether the woman 
+was pretty. Another thing he laid in when he'd committed himself to one last marijuana 
+vacation was petroleum jelly. When he smoked marijuana he tended to masturbate a 
+great deal, whether or not there were opportunities for intercourse, opting when he 
+smoked for masturbation over intercourse, and the petroleum jelly kept him from 
+returning to normal function all tender and sore. He was also hesitant to get up and 
+check the color of his bong because he would have to pass right by the telephone 
+console to get to the kitchen, and he didn't want to be tempted to call the woman 
+who'd said she would come again because he felt creepy about bothering her about 
+something he'd represented as so casual, and was afraid that several audio hang-ups on 
+
+
+
+her answering device would look even creepier, and also he felt anxious about maybe 
+tying up the line at just the moment when she called, as she certainly would. He decided 
+to get Call Waiting added to his audio phone service for a nominal extra charge, then 
+remembered that since this was positively the last time he would or even could indulge 
+what Randi, with an /, had called an addiction every bit as rapacious as pure alcoholism, 
+there would be no real need for Call Waiting, since a situation like the present one could 
+never arise again. This line of thinking almost caused him to become angry. To ensure 
+the composure with which he sat waiting in light in his chair he focused his senses on his 
+surroundings. No part of the insect he'd seen was now visible. The clicks of his portable 
+clock were really composed of three smaller clicks, signifying he supposed preparation, 
+movement, and readjustment. He began to grow disgusted with himself for waiting so 
+anxiously for the promised arrival of something that had stopped being fun anyway. He 
+didn't even know why he liked it anymore. It made his mouth dry and his eyes dry and 
+red and his face sag, and he hated it when his face sagged, it was as if all the integrity of 
+all the muscles in his face was eroded by marijuana, and he got terribly self-conscious 
+about the fact that his face was sagging, and had long ago forbidden himself to smoke 
+dope around anyone else. He didn't even know what its draw was anymore. He couldn't 
+even be around anyone else if he'd smoked marijuana that same day, it made him so 
+self-conscious. And the dope often gave him a painful case of pleurisy if he smoked it for 
+more than two straight days of heavy continuous smoking in front of the InterLace 
+viewer in his bedroom. It made his thoughts jut out crazily in jagged directions and 
+made him stare raptly like an unbright child at entertainment cartridges — when he laid 
+in film cartridges for a vacation with marijuana, he favored cartridges in which a lot of 
+things blew up and crashed into each other, which he was sure an unpleasant-fact 
+specialist like Randi would point out had implications that were not good. He pulled his 
+necktie down smooth while he gathered his intellect, will, self-knowledge, and 
+conviction and determined that when this latest woman came as she surely would this 
+would simply be his very last marijuana debauch. He'd simply smoke so much so fast 
+that it would be so unpleasant and the memory of it so repulsive that once he'd 
+consumed it and gotten it out of his home and his life as quickly as possible he would 
+never want to do it again. He would make it his business to create a really bad set of 
+debauched associations with the stuff in his memory. The dope scared him. It made him 
+afraid. It wasn't that he was afraid of the dope, it was that smoking it made him afraid of 
+everything else. It had long since stopped being a release or relief or fun. This last time, 
+he would smoke the whole 200 grams —120 grams cleaned, destemmed — in four 
+days, over an ounce a day, all in tight heavy economical one-hitters off a quality virgin 
+bong, an incredible, insane amount per day, he'd make it a mission, treating it like a 
+penance and behavior-modification regimen all at once, he'd smoke his way through 
+thirty high-grade grams a day, starting the moment he woke up and used ice water to 
+detach his tongue from the roof of his mouth and took an antacid — averaging out to 
+200 or 300 heavy bong-hits per day, an insane and deliberately unpleasant amount, and 
+he'd make it a mission to smoke it continuously, even though if the marijuana was as 
+good as the woman claimed he'd do five hits and then not want to take the trouble to 
+load and one-hit any more for at least an hour. But he would force himself to do it 
+
+
+
+anyway. He would smoke it all even if he didn't want it. Even if it started to make him 
+dizzy and ill. He would use discipline and persistence and will and make the whole 
+experience so unpleasant, so debased and debauched and unpleasant, that his behavior 
+would be henceforward modified, he'd never even want to do it again because the 
+memory of the insane four days to come would be so firmly, terribly emblazoned in his 
+memory. He'd cure himself by excess. He predicted that the woman, when she came, 
+might want to smoke some of the 200 grams with him, hang out, hole up, listen to some 
+of his impressive collection of Tito Puente recordings, and probably have intercourse. He 
+had never once had actual intercourse on marijuana. Frankly, the idea repelled him. Two 
+dry mouths bumping at each other, trying to kiss, his selfconscious thoughts twisting 
+around on themselves like a snake on a stick while he bucked and snorted dryly above 
+her, his swollen eyes red and his face sagging so that its slack folds maybe touched, 
+limply, the folds of her own loose sagging face is it sloshed back and forth on his pillow, 
+its mouth working dryly. The thought was repellent. He decided he'd have her toss him 
+what she'd promised to bring, and then would from a distance toss back to her the 
+$1250 U.S. in large bills and tell her not to let the door hit her on the butt on the way 
+out. He'd say ass instead of butt. He'd be so rude and unpleasant to her that the 
+memory of his lack of basic decency and of her tight offended face would be a further 
+disincentive ever, in the future, to risk calling her and repeating the course of action he 
+had now committed himself to. 
+
+He had never been so anxious for the arrival of a woman he did not want to see. He 
+remembered clearly the last woman he'd involved in his trying just one more vacation 
+with dope and drawn blinds. The last woman had been something called an 
+appropriation artist, which seemed to mean that she copied and embellished other art 
+and then sold it through a prestigious Marlborough Street gallery. She had an artistic 
+manifesto that involved radical feminist themes. He'd let her give him one of her smaller 
+paintings, which covered half the wall over his bed and was of a famous film actress 
+whose name he always had a hard time recalling and a less famous film actor, the two of 
+them entwined in a scene from a well-known old film, a romantic scene, an embrace, 
+copied from a film history textbook and much enlarged and made stilted, and with 
+obscenities scrawled all over it in bright red letters. The last woman had been sexy but 
+not pretty, as the woman he now didn't want to see but was waiting anxiously for was 
+pretty in a faded withered Cambridge way that made her seem pretty but not sexy. The 
+appropriation artist had been led to believe that he was a former speed addict, 
+intravenous addiction to methamphetamine hydrochloride 1 is what he remembered 
+telling that one, he had even described the awful taste of hydrochloride in the addict's 
+mouth immediately after injection, he had researched the subject carefully. She had 
+been further led to believe that marijuana kept him from using the drug with which he 
+really had a problem, and so that if he seemed anxious to get some once she'd offered 
+to get him some it was only because he was heroically holding out against much darker 
+deeper more addictive urges and he needed her to help him. He couldn't quite 
+remember when or how she'd been given all these impressions. He had not sat down 
+and outright bold-faced lied to her, it had been more of an impression he'd conveyed 
+and nurtured and allowed to gather its own life and force. The insect was now entirely 
+
+
+
+visible. It was on the shelf that held his digital equalizer. The insect might never actually 
+have retreated all the way back into the hole in the shelf's girder. What looked like its 
+reemergence might just have been a change in his attention or the two windows' light 
+or the visual context of his surroundings. The girder protruded from the wall and was a 
+triangle of dull steel with holes for shelves to fit into. The metal shelves that held his 
+audio equipment were painted a dark industrial green and were originally made for 
+holding canned goods. They were designed to be extra kitchen shelves. The insect sat 
+inside its dark shiny case with an immobility that seemed like the gathering of a force, it 
+sat like the hull of a vehicle from which the engine had been for the moment removed. 
+It was dark and had a shiny case and antennae that protruded but did not move. He had 
+to use the bathroom. His last piece of contact from the appropriation artist, with whom 
+he had had intercourse, and who during intercourse had sprayed some sort of perfume 
+up into the air from a mister she held in her left hand as she lay beneath him making a 
+wide variety of sounds and spraying perfume up into the air, so that he felt the cold mist 
+of it settling on his back and shoulders and was chilled and repelled, his last piece of 
+contact after he'd gone into hiding with the marijuana she'd gotten for him had been a 
+card she'd mailed that was a pastiche photo of a doormat of coarse green plastic grass 
+with WELCOME on it and next to it a flattering publicity photo of the appropriation artist 
+from her Back Bay gallery, and between them an unequal sign, which was an equal sign 
+with a diagonal slash across it, and also an obscenity he had assumed was directed at 
+him magisculed in red grease pencil along the bottom, with multiple exclamation points. 
+She had been offended because he had seen her every day for ten days, then when 
+she'd finally obtained 50 grams of genetically enhanced hydroponic marijuana for him 
+he had said that she'd saved his life and he was grateful and the friends for whom he'd 
+promised to get some were grateful and she had to go right now because he had an 
+appointment and had to take off, but that he would doubtless be calling her later that 
+day, and they had shared a moist kiss, and she had said she could feel his heart 
+pounding right through his suit coat, and she had driven away in her rusty unmuffled 
+car, and he had gone and moved his own car to an underground garage several blocks 
+away, and had run back and drawn the clean blinds and curtains, and changed the audio 
+message on his answering device to one that described an emergency departure from 
+town, and had drawn and locked his bedroom blinds, and had taken the new rose- 
+colored bong out of its Bogart's bag, and was not seen for three days, and ignored over 
+two dozen audio messages and protocols and e-notes expressing concern over his 
+message's emergency, and had never contacted her again. He had hoped she would 
+assume he had succumbed again to methamphetamine hydrochloride and was sparing 
+her the agony of his descent back into the hell of chemical dependence. What it really 
+was was that he had again decided those 50 grams of resin-soaked dope, which had 
+been so potent that on the second day it had given him an anxiety attack so paralyzing 
+that he had gone to the bathroom in a Tufts University commemorative ceramic stein to 
+avoid leaving his bedroom, represented his very last debauch ever with dope, and that 
+he had to cut himself off from all possible future sources of temptation and supply, and 
+this surely included the appropriation artist, who had come with the stuff at precisely 
+the time she'd promised, he recalled. From the street outside came the sound of a 
+
+
+
+dumpster being emptied into an E.W.D. land barge. His shame at what she might on the 
+other hand perceive as his slimy phallocentric conduct toward her made it easier for him 
+to avoid her, as well. Though not shame, really. More like being uncomfortable at the 
+thought of it. He had had to launder his bedding twice to get the smell of the perfume 
+out. He went into the bathroom to use the bathroom, making it a point to look neither 
+at the insect visible on the shelf to his left nor at the telephone console on its lacquer 
+workstation to the right. He was committed to touching neither. Where was the woman 
+who had said she'd come. The new bong in the Bogart's bag was orange, meaning he 
+might have misremembered the bong before it as orange. It was a rich autumnal orange 
+that lightened to more of a citrus orange when its plastic cylinder was held up to the 
+late-afternoon light of the window over the kitchen sink. The metal of its stem and bowl 
+was rough stainless steel, the kind with a grain, unpretty and all business. The bong was 
+half a meter tall and had a weighted base covered in soft false suede. Its orange plastic 
+was thick and the carb on the side opposite the stem had been raggedly cut so that 
+rough shards of plastic protruded from the little hole and might well hurt his thumb 
+when he smoked, which he decided to consider just part of the penance he would 
+undertake after the woman had come and gone. He left the door to the bathroom open 
+so that he would be sure to hear the telephone when it sounded or the buzzer to the 
+front doors of his condominium complex when it sounded. In the bathroom his throat 
+suddenly closed and he wept hard for two or three seconds before the weeping stopped 
+abruptly and he could not get it to start again. It was now over four hours since the time 
+the woman had casually committed to come. Was he in the bathroom or in his chair 
+near the window and near his telephone console and the insect and the window that 
+had admitted a straight rectangular bar of light when he began to wait. The light 
+through this window was coming at an angle more and more oblique. Its shadow had 
+become a parallelogram. The light through the southwest window was straight and 
+reddening. He had thought he needed to use the bathroom but was unable to. He tried 
+putting a whole stack of film cartridges into the dock of the disc-drive and then turning 
+on the huge teleputer in his bedroom. He could see the piece of appropriation art in the 
+mirror above the TP. He lowered the volume all the way and pointed the remote device 
+at the TP like some sort of weapon. He sat on the edge of his bed with his elbows on his 
+knees and scanned the stack of cartridges. Each cartridge in the dock dropped on 
+command and began to engage the drive with an insectile click and whir, and he 
+scanned it. But he was unable to distract himself with the TP because he was unable to 
+stay with any one entertainment cartridge for more than a few seconds. The moment he 
+recognized what exactly was on one cartridge he had a strong anxious feeling that there 
+was something more entertaining on another cartridge and that he was potentially 
+missing it. He realized that he would have plenty of time to enjoy all the cartridges, and 
+realized intellectually that the feeling of deprived panic over missing something made 
+no sense. The viewer hung on the wall, half again as large as the piece of feminist art. He 
+scanned cartridges for some time. The telephone console sounded during this interval of 
+anxious scanning. He was up and moving back out toward it before the first ring was 
+completed, flooded with either excitement or relief, the TP's remote device still in his 
+hand, but it was only a friend and colleague calling, and when he heard the voice that 
+
+
+
+was not the woman who had promised to bring what he'd committed the next several 
+days to banishing from his life forever he was almost sick with disappointment, with a 
+great deal of mistaken adrenaline now shining and ringing in his system, and he got off 
+the line with the colleague to clear the line and keep it available for the woman so fast 
+that he was sure his colleague perceived him as either angry with him or just plain rude. 
+He was further upset at the thought that his answering the telephone this late in the 
+day did not jibe with the emergency message about being unreachable that would be on 
+his answering device if the colleague called back after the woman had come and gone 
+and he'd shut the whole system of his life down, and he was standing over the 
+telephone console trying to decide whether the risk of the colleague or someone else 
+from the agency calling back was sufficient to justify changing the audio message on the 
+answering device to describe an emergency departure this evening instead of this 
+afternoon, but he decided he felt that since the woman had definitely committed to 
+coming, his leaving the message unchanged would be a gesture of fidelity to her 
+commitment, and might somehow in some oblique way strengthen that commitment. 
+The E.W.D. land barge was emptying dumpsters all up and down the street. He returned 
+to his chair near the window. The disk drive and TP viewer were still on in his bedroom 
+and he could see through the angle of the bedroom's doorway the lights from the high- 
+definition screen blink and shift from one primary color to another in the dim room, and 
+for a while he killed time casually by trying to imagine what entertaining scenes on the 
+unwatched viewer the changing colors and intensities might signify. The chair faced the 
+room instead of the window. Reading while waiting for marijuana was out of the 
+question. He considered masturbating but did not. He didn't reject the idea so much as 
+not react to it and watch as it floated away. He thought very broadly of desires and 
+ideas being watched but not acted upon, he thought of impulses being starved of 
+expression and drying out and floating dryly away, and felt on some level that this had 
+something to do with him and his circumstances and what, if this grueling final debauch 
+he'd committed himself to didn't somehow resolve the problem, would surely have to 
+be called his problem, but he could not even begin to try to see how the image of 
+desiccated impulses floating dryly related to either him or the insect, which had 
+retreated back into its hole in the angled girder, because at this precise time his tele¬ 
+phone and his intercom to the front door's buzzer both sounded at the same time, both 
+loud and tortured and so abrupt they sounded yanked through a very small hole into the 
+great balloon of colored silence he sat in, waiting, and he moved first toward the 
+telephone console, then over toward his intercom module, then convulsively back 
+toward the sounding phone, and then tried somehow to move toward both at once, 
+finally, so that he stood splay-legged, arms wildly out as if something's been flung, 
+splayed, entombed between the two sounds, without a thought in his head. 
