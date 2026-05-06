@@ -1252,6 +1252,8 @@ function handleSelectedAnnotationBubble() {
   if (state.pageInteraction.kind === "text") createTextAnnotationFromSelection();
 }
 function bindEvents() {
+  if (state.eventsBound) return;
+  state.eventsBound = true;
   DOM.toggleLeft.addEventListener("click", () => { DOM.leftPanel.style.display = DOM.leftPanel.style.display === "none" ? "" : "none"; });
   DOM.toggleRight.addEventListener("click", () => { DOM.rightPanel.style.display = DOM.rightPanel.style.display === "none" ? "" : "none"; });
   DOM.collapseLeft.addEventListener("click", () => { DOM.leftPanel.style.display = "none"; });
@@ -1341,7 +1343,6 @@ function openReadingByQuery() {
   return state.readings.find(r => normalizePath(r.path) === clean || r.download_url === file) || null;
 }
 async function init() {
-  bindEvents();
   await initFirebase();
   showPasswordIfNeeded();
   if (state.locked) return;
@@ -1425,6 +1426,7 @@ function bindCommentComposer() {
 document.addEventListener("DOMContentLoaded", async () => {
   bindGlobals();
   bindCommentComposer();
+  bindEvents();
   showPasswordIfNeeded();
   if (state.locked) return;
   renderAnnotationEditorPanel();
