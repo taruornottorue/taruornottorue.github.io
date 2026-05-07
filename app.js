@@ -585,8 +585,7 @@
     cont.innerHTML = '';
     state.readings.forEach(r => {
       const item = el('div', { className: 'reading-item' });
-      const icon = r.kind === 'pdf' ? 'PDF' : 'TXT';
-      item.innerHTML = `<div class="reading-title">${escapeHtml(r.title)}<div class="small" style="margin-top:5px">${icon}</div></div>`;
+      item.innerHTML = `<div class="reading-title">${escapeHtml(r.title)}</div>`;
       item.addEventListener('click', () => loadReading(r));
       cont.appendChild(item);
     });
@@ -709,14 +708,24 @@
       state.current.pdfPageSizes.set(pageNum, { width: viewport.width, height: viewport.height });
 
       await page.render({ canvasContext: ctx, viewport }).promise;
-      const textContent = await page.getTextContent();
-      if (window.pdfjsLib && pdfjsLib.renderTextLayer) {
-        pdfjsLib.renderTextLayer({
-          textContentSource: textContent,
-          container: textLayer,
-          viewport,
-          textDivs: []
-        });
+      try {
+        const textContent = await page.getTextContent();
+        if (window.pdfjsLib && pdfjsLib.renderTextLayer) {
+          const textLayerTask = pdfjsLib.renderTextLayer({
+            textContent,
+            textContentSource: textContent,
+            container: textLayer,
+            viewport,
+            textDivs: []
+          });
+          if (textLayerTask?.promise && typeof textLayerTask.promise.then === 'function') {
+            await textLayerTask.promise;
+          } else if (textLayerTask?.render && typeof textLayerTask.render === 'function') {
+            await textLayerTask.render();
+          }
+        }
+      } catch (textLayerError) {
+        console.warn('PDF text layer render failed; continuing with canvas view only.', textLayerError);
       }
       setupPdfPageInteractions(pageNum, overlay);
     }
@@ -947,6 +956,21 @@
     $('#selection-preview').textContent = preview.length > 120 ? `${preview.slice(0, 120)}…` : preview;
     $('#annotation-text').value = payload.note || '';
     showAnnotationEditor(payload);
+  }
+
+  function snapshotCurrentSelection() {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    const text = sel.toString().trim();
+    if (!text) return null;
+    const range = sel.getRangeAt(0);
+    if (state.current.kind === 'text') {
+      return selectionTextToPending(range);
+    }
+    if (state.current.kind === 'pdf' && state.pendingTool === 'select') {
+      return capturePdfSelection();
+    }
+    return null;
   }
 
   function pageBoxFromRelativeRect(pageNum, rect) {
@@ -1537,10 +1561,15 @@
     $('#collapse-left').addEventListener('click', () => $('#left-col').classList.toggle('collapsed'));
     $('#collapse-right').addEventListener('click', () => $('#right-col').classList.toggle('collapsed'));
 
-    $('#annot-fab').addEventListener('pointerdown', ev => { ev.preventDefault(); });
+    $('#annot-fab').addEventListener('pointerdown', ev => {
+      ev.preventDefault();
+      const snap = snapshotCurrentSelection();
+      if (snap) state.pendingSelection = snap;
+    });
     $('#annot-fab').addEventListener('click', () => {
-      if (!state.pendingSelection) return alert('No selection or mark.');
-      const payload = state.pendingSelection;
+      const payload = state.pendingSelection || snapshotCurrentSelection();
+      if (!payload) return alert('No selection or mark.');
+      state.pendingSelection = payload;
       const preview = payload.preview || (payload.kind === 'text' ? payload.text : `${payload.type || 'annotation'} on page ${payload.page || ''}`);
       showAnnotationEditor({ ...payload, preview, editingId: '', remoteId: '' });
       $('#annotation-text').value = '';
