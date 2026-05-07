@@ -74,7 +74,7 @@ body{overflow:hidden}
 .comment-author{display:inline-block;padding:4px 8px;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;margin-bottom:6px;font-size:11px}
 .comment-input{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
 .comment-input textarea{min-height:56px;flex:1;border-radius:10px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);resize:vertical}
-.pdf-toolbar{display:flex;align-items:center;gap:8px;padding:12px 16px 0 16px;flex-wrap:wrap}
+.pdf-toolbar{display:flex;align-items:center;gap:8px;padding:12px 16px 14px 16px;flex-wrap:wrap;margin-bottom:8px}
 .toolbar-spacer{flex:1}
 .pdf-viewer{padding:10px 16px 20px 16px;display:flex;flex-direction:column;gap:16px}
 .pdf-page{position:relative;background:#f6f2ec;border-radius:12px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,0.35);align-self:center}
