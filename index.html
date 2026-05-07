@@ -2,210 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Readings</title>
-  <link rel="stylesheet" href="./styles.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
-  <script>
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
-    }
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
       <h1>Readings</h1>
-      <div class="sub">friends annotating together — text and PDF mode</div>
+      <div class="subtitle">and also annotating if you wish to</div>
     </div>
-    <div class="top-actions">
-      <div class="badge" id="doc-kind-badge">No reading loaded</div>
-      <button class="btn" id="toggle-left">Library</button>
-      <button class="btn" id="toggle-right">Annotations</button>
-    </div>
+    <div class="topbar-actions" id="topbar-actions"></div>
   </header>
 
-  <div class="shell">
-    <aside class="panel" id="left-panel">
+  <div class="app-shell">
+    <aside class="panel sidebar left" id="left-col">
       <div class="panel-header">
-        <div class="title">
+        <div class="title-wrap">
+          <div class="eyebrow">Primarily just short stories</div>
           <strong>Readings</strong>
-          <div class="small">Markdown / text / PDF documents</div>
         </div>
-        <button class="btn ghost" id="collapse-left">⟨</button>
+        <button class="icon-btn" id="collapse-left" title="Toggle left">O</button>
       </div>
       <div class="panel-body">
-        <input class="library-search" id="library-search" type="search" placeholder="Search readings" />
-        <div class="chips" id="library-types">
-          <button class="chip active" data-type="all">All</button>
-          <button class="chip" data-type="text">Text</button>
-          <button class="chip" data-type="pdf">PDF</button>
-        </div>
-        <div class="list" id="reading-list">
-          <div class="empty-state">Loading readings…</div>
-        </div>
+        <div id="reading-list"><div class="muted">Loading…</div></div>
       </div>
     </aside>
 
-    <main class="panel center">
-      <div class="center-header">
-        <div class="doc-title-wrap">
-          <h2 id="doc-title">Nothing loaded</h2>
-          <div class="sub" id="doc-subtitle">Pick a reading from the left.</div>
+    <main class="panel center" id="center-col">
+      <div class="center-head">
+        <div>
+          <h2 id="post-title">Nothing loaded</h2>
+          <div id="current-file" class="muted small" style="display:none"></div>
         </div>
-        <div class="toolbar" id="pdf-toolbar" hidden>
-          <button class="btn" data-tool="select">Select</button>
-          <button class="btn" data-tool="highlight">Highlight</button>
-          <button class="btn" data-tool="rect">Box</button>
-          <button class="btn" data-tool="pen">Pen</button>
-          <button class="btn" data-tool="note">Note</button>
-          <div class="sep"></div>
-          <button class="btn" id="zoom-out">−</button>
-          <div class="field">Zoom <input id="zoom-value" type="number" step="0.1" min="0.5" max="3" value="1" /></div>
-          <button class="btn" id="zoom-in">＋</button>
-          <button class="btn ghost" id="fit-width">Fit</button>
-        </div>
+        <div id="viewer-meta" class="muted small"></div>
       </div>
-      <div class="center-body" id="center-body">
-        <div class="viewer-host" id="viewer-host">
-          <div class="text-empty">Open a reading from the left.</div>
-        </div>
+
+      <div id="pdf-toolbar" class="pdf-toolbar hidden">
+        <button class="tool-btn" data-tool="select">Select</button>
+        <button class="tool-btn" data-tool="highlight">Highlight</button>
+        <button class="tool-btn" data-tool="box">Box</button>
+        <button class="tool-btn" data-tool="pen">Pen</button>
+        <span class="toolbar-spacer"></span>
+        <button class="tool-btn" id="zoom-out">−</button>
+        <button class="tool-btn" id="zoom-reset">100%</button>
+        <button class="tool-btn" id="zoom-in">+</button>
+      </div>
+
+      <div id="center-content" class="center-content">
+        <div id="article" tabindex="0"><div class="muted">Open a reading from the left.</div></div>
+        <div id="pdf-viewer" class="pdf-viewer hidden"></div>
       </div>
     </main>
 
-    <aside class="panel" id="right-panel">
+    <aside class="panel sidebar right" id="right-col">
       <div class="panel-header">
-        <div class="title">
-          <strong>Annotations</strong>
-          <div class="small">Notes, replies, filters, and status</div>
-        </div>
-        <button class="btn ghost" id="collapse-right">⟩</button>
+        <div class="title-wrap"><strong>Annotations</strong></div>
+        <button class="icon-btn" id="collapse-right" title="Toggle right">X</button>
       </div>
       <div class="panel-body">
-        <div class="form" id="editor" hidden>
-          <div class="small" id="editor-preview">Select an annotation to edit.</div>
-          <div class="form-row">
-            <label>Author
-              <input id="ann-author" type="text" placeholder="Your name" />
-            </label>
-            <label>Color
-              <input id="ann-color" type="color" value="#b46b2d" />
-            </label>
+        <div id="annotation-editor" class="annotation-editor hidden">
+          <div class="editor-topline">
+            <strong>Add annotation</strong>
+            <div class="small muted" id="selection-preview"></div>
           </div>
-          <div class="form-row">
-            <label>Type
-              <select id="ann-type">
-                <option value="highlight">Highlight</option>
-                <option value="rect">Box</option>
-                <option value="pen">Pen</option>
-                <option value="note">Note</option>
-              </select>
-            </label>
-            <label>Status
-              <select id="ann-status">
-                <option value="open">Open</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </label>
+          <textarea id="annotation-text" placeholder="write your note"></textarea>
+          <div class="editor-actions">
+            <button class="pill-btn" id="save-annotation">Save</button>
+            <button class="pill-btn" id="cancel-annotation">Cancel</button>
+            <button class="pill-btn danger hidden" id="delete-annotation">Delete</button>
           </div>
-          <label>Comment / note
-            <textarea id="ann-note" placeholder="Write a note about this mark"></textarea>
-          </label>
-          <div class="actions">
-            <button class="btn primary" id="save-ann">Save</button>
-            <button class="btn" id="cancel-ann">Cancel</button>
-            <button class="btn danger" id="delete-ann" hidden>Delete</button>
-          </div>
-          <div class="annotation-meta">
-            <span class="tag" id="ann-location-tag">No annotation selected</span>
-          </div>
-
-          <div class="form" style="margin-top:14px;">
-            <div class="small">Discussion</div>
-            <div class="small" id="reply-target"></div>
-            <div id="comment-thread" class="thread"></div>
-            <label>Comment
-              <textarea id="comment-body" placeholder="Add a comment or a reply"></textarea>
-            </label>
-            <label>Comment author
-              <input id="comment-author" type="text" placeholder="Your name" />
-            </label>
-            <div class="actions">
-              <button class="btn primary" id="add-comment">Add comment</button>
-              <button class="btn" id="clear-reply">Clear reply</button>
-            </div>
-          </div>
+          <div class="muted tiny">This will get saved for anyone else to see. You can edit or delete it later.</div>
         </div>
-
-        <div class="form" style="margin-top:14px;">
-          <div class="form-row">
-            <label>Filter type
-              <select id="filter-type">
-                <option value="all">All</option>
-                <option value="highlight">Highlight</option>
-                <option value="rect">Box</option>
-                <option value="pen">Pen</option>
-                <option value="note">Note</option>
-              </select>
-            </label>
-            <label>Filter status
-              <select id="filter-status">
-                <option value="all">All</option>
-                <option value="open">Open</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </label>
-          </div>
-          <div class="form-row">
-            <label>Page
-              <input id="filter-page" type="number" min="1" placeholder="Any" />
-            </label>
-            <label>Search
-              <input id="filter-search" type="search" placeholder="Text inside notes/comments" />
-            </label>
-          </div>
-        </div>
-
-        <div id="annotation-list" class="list" style="margin-top:14px;">
-          <div class="empty-state">Select text or draw on a PDF page to create an annotation.</div>
-        </div>
-
-        <div class="small" style="margin-top:14px; color:var(--subtle)">
-          Comments are saved per annotation and can be replied to. Local storage is the default; Firestore can be added later without changing the UI.
-        </div>
+        <div id="annotations-list"><div class="muted">Select text or use a PDF tool to create an annotation.</div></div>
       </div>
     </aside>
   </div>
 
-  <div class="selection-bubble" id="selection-bubble" hidden>
-    <button class="btn" id="bubble-annotate">Annotate</button>
-    <button class="btn secondary" id="bubble-cancel">Cancel</button>
-  </div>
+  <button id="annot-fab" class="floating-btn" aria-label="Annotate">Annotate</button>
+  <button id="lookup-btn" class="floating-btn secondary" aria-label="Look up">Look up</button>
 
-  <div class="password" id="password-modal">
-    <div class="password-card">
-      <h3>Unlock</h3>
-      <div class="note">Enter the reading password to continue.</div>
-      <input id="password-input" type="password" placeholder="Password" autocomplete="off" />
-      <div class="row">
-        <button class="btn primary" id="password-submit">Unlock</button>
-      </div>
+  <div id="pw-overlay">
+    <div id="pw-box">
+      <h3>Password</h3>
+      <div class="pw-note">I don't know why I added this</div>
+      <input id="pw-input" placeholder="Password" autocomplete="off" />
+      <div class="center-row"><button id="pw-submit" class="pill-btn">Unlock</button></div>
     </div>
   </div>
 
-  <div id="toast"></div>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script>
-  window.FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCxhiw5V3epzzWeFxlMGQ8SH4QjWDjH_1A",
-    authDomain: "taruornottorue.firebaseapp.com",
-    projectId: "taruornottorue",
-    storageBucket: "taruornottorue.firebasestorage.app",
-    messagingSenderId: "458061841918",
-    appId: "1:458061841918:web:1cc68c086bcbf81ee3acaf"
-  };
-</script>
-  <script src="./app.js"></script>
+  <div id="define-modal">
+    <div id="define-content"></div>
+    <div class="right-row"><button class="pill-btn" id="close-define">Close</button></div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
