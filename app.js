@@ -3,12 +3,12 @@
   const PASSWORD = 'Stacy';
   const READINGS_PATH = 'readings';
   const FIREBASE_CONFIG = {
-    apiKey: 'a',
-    authDomain: 'a',
+    apiKey: 'AIzaSyCxhiw5V3epzzWeFxlMGQ8SH4QjWDjH_1A',
+    authDomain: 'taruornottorue.firebaseapp.com',
     projectId: 'taruornottorue',
     storageBucket: 'taruornottorue.firebasestorage.app',
-    messagingSenderId: 'a',
-    appId: 'af'
+    messagingSenderId: '458061841918',
+    appId: '1:458061841918:web:1cc68c086bcbf81ee3acaf'
   };
 
   if (window.pdfjsLib) {
