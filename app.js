@@ -90,7 +90,7 @@
       pdfRenderToken: 0
     },
     pendingSelection: null,
-    pendingTool: 'highlight',
+    pendingTool: 'box',
     openCommentFor: null,
     commentCache: {},
     loadingTimers: {},
@@ -636,8 +636,6 @@
   async function loadTextReading(r, url) {
     state.current.kind = 'text';
     $('#post-title').textContent = r.title || r.path.split('/').pop();
-    $('#current-file').style.display = 'block';
-    $('#current-file').textContent = normalizePath(r.path);
     $('#viewer-meta').textContent = '';
     $('#pdf-toolbar').classList.add('hidden');
     $('#pdf-viewer').classList.add('hidden');
@@ -671,7 +669,7 @@
     viewer.classList.remove('hidden');
     $('#article').classList.add('hidden');
     $('#pdf-toolbar').classList.remove('hidden');
-    setTool(state.pendingTool || 'select');
+    setTool(state.pendingTool || 'box');
     state.current.pdfPageEls.clear();
     state.current.pdfPageSizes.clear();
 
@@ -741,8 +739,6 @@
     state.current.raw = '';
     state.current.displayText = '';
     $('#post-title').textContent = state.current.title;
-    $('#current-file').style.display = 'block';
-    $('#current-file').textContent = normalizePath(r.path);
     $('#article').classList.add('hidden');
     $('#pdf-viewer').classList.remove('hidden');
     $('#pdf-toolbar').classList.remove('hidden');
@@ -765,7 +761,7 @@
     hideFabAndLookup();
     state.pendingSelection = null;
     state.openCommentFor = null;
-    setTool('select');
+    setTool('box');
     const url = r.download_url || `/${r.path}`;
     setViewerMeta();
     resetCenterState();
@@ -1650,7 +1646,7 @@
   }
 
   function initPdfToolbarState() {
-    setTool('select');
+    setTool('box');
   }
 
   function enhanceTextModeHtmlHover() {
