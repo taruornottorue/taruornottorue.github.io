@@ -15,28 +15,24 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--muted);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial}
 body{overflow:hidden}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
-.brand{display:flex;align-items:baseline;gap:12px}
-.brand h1{margin:0;font-size:16px}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{margin:0;font-size:16px;letter-spacing:.2px}
 .subtitle{font-size:12px;color:var(--muted-2)}
-.app-shell{display:flex;gap:12px;height:calc(100vh - 63px);padding:12px}
-.panel{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;position:relative}
-.sidebar{width:260px;min-width:260px;flex:0 0 260px;display:flex;flex-direction:column}
-.sidebar.left,.sidebar.right{width:260px;min-width:260px;flex-basis:260px}
-.center{flex:1;min-width:0;display:flex;flex-direction:column}
-.panel-header{display:flex;justify-content:space-between;align-items:center;padding:14px 14px 10px 14px}
+.app-shell{display:grid;grid-template-columns:minmax(220px, 18vw) minmax(0, 1fr) minmax(260px, 21vw);gap:12px;height:calc(100vh - 57px);padding:12px}
+.panel{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;position:relative;min-width:0}
+.sidebar{min-width:0;display:flex;flex-direction:column}
+.sidebar.left{width:auto}
+.sidebar.right{width:auto}
+.center{min-width:0;display:flex;flex-direction:column}
+.panel-header{display:flex;justify-content:space-between;align-items:center;padding:13px 13px 9px 13px}
 .title-wrap{display:flex;flex-direction:column;gap:2px}
 .eyebrow,.small{font-size:12px;color:var(--muted-2)}
 .tiny{font-size:11px;color:var(--muted-2)}
-.panel-body{padding:0 14px 14px 14px;overflow:auto;flex:1}
-.center-head{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 10px 16px;gap:12px;border-bottom:1px solid rgba(255,255,255,0.03)}
-.center-head h2{margin:0;font-size:20px}
-..center-content{position:relative;flex:1;overflow:auto;padding:12px 12px 14px 12px}
-body.pdf-mode .app-shell{gap:10px}
-body.pdf-mode .center-content{padding:10px 10px 12px 10px}
-body.pdf-mode .pdf-toolbar{padding:10px 12px 12px 12px;margin-bottom:6px}
-body.pdf-mode .pdf-viewer{padding:8px 12px 16px 12px;gap:14px}
-
+.panel-body{padding:0 12px 12px 12px;overflow:auto;flex:1}
+.center-head{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 14px 9px 14px;gap:12px;border-bottom:1px solid rgba(255,255,255,0.03);position:sticky;top:0;background:linear-gradient(180deg, rgba(23,18,15,0.98), rgba(23,18,15,0.92));backdrop-filter:blur(10px);z-index:5}
+.center-head h2{margin:0;font-size:19px;line-height:1.15}
+.center-content{position:relative;flex:1;overflow:auto;padding:12px 14px 14px 14px;scrollbar-gutter:stable}
 .muted{color:var(--muted-2)}
 .hidden{display:none !important}
 .icon-btn,.pill-btn,.tool-btn,.floating-btn{border:none;cursor:pointer}
@@ -52,10 +48,10 @@ body.pdf-mode .pdf-viewer{padding:8px 12px 16px 12px;gap:14px}
 .floating-btn{position:fixed;z-index:9999;display:none;padding:10px 15px;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;box-shadow:0 10px 28px rgba(0,0,0,0.45);font-weight:700}
 .floating-btn.secondary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border:1px solid transparent}
 #reading-list{display:flex;flex-direction:column;gap:8px;padding-top:4px}
-.reading-item{padding:13px 14px;border-radius:12px;background:var(--glass);cursor:pointer;border:1px solid rgba(255,255,255,0.02);transition:transform .15s ease, background .15s ease;display:flex;align-items:center;justify-content:center;min-height:54px}
+.reading-item{padding:12px 13px;border-radius:12px;background:var(--glass);cursor:pointer;border:1px solid rgba(255,255,255,0.02);transition:transform .15s ease, background .15s ease;display:flex;align-items:center;justify-content:center;min-height:52px}
 .reading-item:hover{transform:translateY(-1px);background:rgba(255,255,255,0.04)}
 .reading-title{font-weight:700;line-height:1.25;text-align:center;width:100%}
-#article{line-height:1.65;color:var(--muted);padding:8px 4px 18px 4px;outline:none;user-select:text;-webkit-user-select:text;min-height:100px}
+#article{line-height:1.68;color:var(--muted);padding:6px 2px 16px 2px;outline:none;user-select:text;-webkit-user-select:text;min-height:100px}
 #article p{margin:0 0 1em 0}
 #article .hl{background:var(--highlight);border-radius:4px;padding:0 2px;cursor:pointer;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 #article .hl[data-kind="pdf"]{background:rgba(179,107,44,0.16)}
@@ -64,6 +60,7 @@ body.pdf-mode .pdf-viewer{padding:8px 12px 16px 12px;gap:14px}
 .annotation-editor textarea{width:100%;min-height:88px;border-radius:10px;padding:10px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);resize:vertical}
 .editor-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 #annotations-list{display:flex;flex-direction:column;gap:10px}
+.comments-list{display:flex;flex-direction:column;gap:6px}
 .ann-group{padding:11px;border-radius:12px;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03)}
 .ann-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
 .ann-title{font-weight:700;font-size:13px}
@@ -79,12 +76,10 @@ body.pdf-mode .pdf-viewer{padding:8px 12px 16px 12px;gap:14px}
 .comment-author{display:inline-block;padding:4px 8px;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;margin-bottom:6px;font-size:11px}
 .comment-input{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
 .comment-input textarea{min-height:56px;flex:1;border-radius:10px;padding:8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);resize:vertical}
-.pdf-toolbar{display:flex;align-items:center;gap:8px;padding:12px 16px 14px 16px;flex-wrap:wrap;margin-bottom:8px}
+.pdf-toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px 12px 14px;flex-wrap:wrap;margin-bottom:6px;position:sticky;top:0;background:linear-gradient(180deg, rgba(23,18,15,0.98), rgba(23,18,15,0.92));backdrop-filter:blur(10px);z-index:6}
 .toolbar-spacer{flex:1}
-.pdf-viewer{padding:10px 16px 20px 16px;display:flex;flex-direction:column;gap:16px}
-.pdf-page{position:relative;background:#f6f2ec;border-radius:12px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,0.35);align-self:center}
-.pdf-page{max-width:100%}
-
+.pdf-viewer{padding:8px 12px 18px 12px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.pdf-page{position:relative;background:#f6f2ec;border-radius:12px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,0.35);align-self:center;max-width:100%}
 .pdf-page canvas{display:block}
 .pdf-canvas{position:relative;z-index:1}
 .pdf-text-layer{position:absolute;inset:0;z-index:2;opacity:0.02;user-select:text;mix-blend-mode:multiply}
@@ -112,9 +107,16 @@ body.pdf-mode .pdf-viewer{padding:8px 12px 16px 12px;gap:14px}
 .textLayer .highlight{margin:0 1px;padding:1px 0;border-radius:4px;background:rgba(179,107,44,0.22)}
 .textLayer ::selection{background:rgba(179,107,44,0.35)}
 
+@media (min-width: 1500px){
+  .app-shell{grid-template-columns:minmax(210px, 15vw) minmax(0, 1fr) minmax(270px, 19vw)}
+  .panel-header{padding:12px 12px 8px 12px}
+  .panel-body{padding:0 10px 10px 10px}
+  .reading-item{padding:11px 12px}
+}
+
 @media (max-width: 980px){
   body{overflow:auto}
-  .app-shell{flex-direction:column;height:auto;overflow:visible}
+  .app-shell{display:flex;flex-direction:column;height:auto;overflow:visible;padding:10px}
   .sidebar{width:100%}
   .center{min-height:55vh}
   .center-content{padding:10px}
