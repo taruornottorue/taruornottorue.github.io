@@ -85,8 +85,6 @@
       pdf: null,
       pdfUrl: null,
       pdfScale: 1.25,
-      pdfBaseScale: 1.25,
-      pdfAutoFit: true,
       pdfPageEls: new Map(),
       pdfPageSizes: new Map(),
       pdfRenderToken: 0
@@ -161,9 +159,7 @@
   function setViewerMeta() {
     const meta = $('#viewer-meta');
     if (state.current.kind === 'pdf') {
-      const base = state.current.pdfBaseScale || 1;
-      const pct = base > 0 ? Math.round((state.current.pdfScale / base) * 100) : Math.round(state.current.pdfScale * 100);
-      meta.textContent = `PDF • zoom ${pct}%`;
+      meta.textContent = `PDF • zoom ${Math.round(state.current.pdfScale * 100)}%`;
     } else {
       meta.textContent = '';
     }
@@ -201,35 +197,6 @@
   function hideFabAndLookup() {
     $('#annot-fab').style.display = 'none';
     $('#lookup-btn').style.display = 'none';
-  }
-
-  function applyPdfFocusMode(enabled) {
-    const body = document.body;
-    body.classList.toggle('pdf-mode', !!enabled);
-    const left = $('#left-col');
-    const right = $('#right-col');
-    if (!left || !right) return;
-    if (enabled) {
-      left.classList.add('collapsed');
-      right.classList.add('collapsed');
-    } else {
-      left.classList.remove('collapsed');
-      right.classList.remove('collapsed');
-    }
-  }
-
-  async function fitPdfToViewport(doc) {
-    if (!doc) return;
-    const page = await doc.getPage(1);
-    const baseViewport = page.getViewport({ scale: 1 });
-    const center = $('#center-content');
-    const availableWidth = Math.max(520, Math.floor((center?.clientWidth || window.innerWidth || 1200) - 32));
-    const rawScale = availableWidth / Math.max(1, baseViewport.width);
-    const scale = Math.max(0.8, Math.min(2.5, Math.round(rawScale * 100) / 100));
-    state.current.pdfBaseScale = scale;
-    state.current.pdfScale = scale;
-    state.current.pdfAutoFit = true;
-    return scale;
   }
 
   function showFloatingButtons(rect, canLookup) {
@@ -625,6 +592,7 @@
   }
 
   function resetCenterState() {
+    delete document.body.dataset.viewerKind;
     $('#article').classList.remove('hidden');
     $('#pdf-viewer').classList.add('hidden');
     $('#pdf-viewer').innerHTML = '';
@@ -668,7 +636,7 @@
 
   async function loadTextReading(r, url) {
     state.current.kind = 'text';
-    applyPdfFocusMode(false);
+    document.body.dataset.viewerKind = 'text';
     $('#post-title').textContent = r.title || r.path.split('/').pop();
     $('#viewer-meta').textContent = '';
     $('#pdf-toolbar').classList.add('hidden');
@@ -767,23 +735,21 @@
 
   async function loadPdfReading(r, url) {
     state.current.kind = 'pdf';
+    document.body.dataset.viewerKind = 'pdf';
     state.current.filePath = normalizePath(r.path);
     state.current.title = r.title || r.path.split('/').pop();
     state.current.pdfUrl = url;
     state.current.raw = '';
     state.current.displayText = '';
-    state.current.pdfAutoFit = true;
     $('#post-title').textContent = state.current.title;
     $('#article').classList.add('hidden');
     $('#pdf-viewer').classList.remove('hidden');
     $('#pdf-toolbar').classList.remove('hidden');
     $('#pdf-viewer').innerHTML = '<div class="muted">Loading PDF…</div>';
-    applyPdfFocusMode(true);
     try {
       const task = pdfjsLib.getDocument({ url });
       const doc = await task.promise;
       state.current.pdf = doc;
-      await fitPdfToViewport(doc);
       await fetchAnnotationsOnce(state.current.filePath);
       subscribeRealtime(state.current.filePath);
       await renderPdfPages();
@@ -809,13 +775,13 @@
   function renderAnnotationComments(remoteId, comments) {
     const listEl = document.getElementById(`comments-list-${remoteId}`);
     if (!listEl) return;
-    const cache = state.commentCache[remoteId] || { status: 'idle', items: [], lastRenderedHash: '' };
+    const cache = state.commentCache[remoteId] || { status: 'idle', items: [] };
     const items = comments || cache.items || [];
     const hash = JSON.stringify(items.map(i => [i.author || '', i.text || '']));
-    if (listEl.dataset.renderedHash === hash) return;
+    const hasVisibleContent = listEl.childElementCount > 0;
+    if (cache.lastRenderedHash === hash && hasVisibleContent) return;
     cache.lastRenderedHash = hash;
     state.commentCache[remoteId] = cache;
-    listEl.dataset.renderedHash = hash;
     if (!items.length) {
       listEl.innerHTML = '<div class="muted small">No comments yet.</div>';
       return;
@@ -918,9 +884,10 @@
     commentBlock.style.display = open ? '' : 'none';
     commentBlock.appendChild(el('div', { className: 'muted small', style: 'margin-bottom:8px;font-weight:600' }, `Commenting on: ${escapeHtml(excerpt.slice(0, 120))}${excerpt.length > 120 ? '…' : ''}`));
     const commentsList = el('div', { className: 'comments-list', id: `comments-list-${remoteId}` });
-    commentsList.dataset.renderedHash = '';
     const cache = state.commentCache[remoteId];
-    if (cache && (cache.status === 'loaded' || (cache.items && cache.items.length))) {
+    if (cache && cache.status === 'loaded') {
+      renderAnnotationComments(remoteId, cache.items);
+    } else if (cache && cache.items && cache.items.length) {
       renderAnnotationComments(remoteId, cache.items);
     } else {
       commentsList.innerHTML = '<div class="muted small">No comments yet.</div>';
@@ -968,18 +935,14 @@
       const card = renderAnnotationCard(group.items[0], idx, group, normalized);
       cont.appendChild(card);
     });
-    if (state.openCommentFor) {
-      const cache = state.commentCache[state.openCommentFor];
-      if (cache) renderAnnotationComments(state.openCommentFor, cache.items);
-    }
     if (state.current.kind === 'pdf') renderPdfAnnotations();
+    if (state.openCommentFor) fetchAndRenderCommentsFor(state.openCommentFor, true);
   }
 
   function openCommentsFor(remoteId) {
     state.openCommentFor = remoteId;
     const anns = loadAnnsLocal(state.current.filePath) || [];
     renderAnnotations();
-    fetchAndRenderCommentsFor(remoteId);
     setTimeout(() => {
       const ta = document.getElementById(`comment-input-${remoteId}`);
       if (ta) ta.focus();
@@ -1595,22 +1558,8 @@
 
     $('#save-annotation').addEventListener('click', saveCurrentAnnotation);
 
-    $('#collapse-left').addEventListener('click', async () => {
-      $('#left-col').classList.toggle('collapsed');
-      if (state.current.kind === 'pdf' && state.current.pdf && state.current.pdfAutoFit) {
-        await fitPdfToViewport(state.current.pdf);
-        setViewerMeta();
-        await renderPdfPages();
-      }
-    });
-    $('#collapse-right').addEventListener('click', async () => {
-      $('#right-col').classList.toggle('collapsed');
-      if (state.current.kind === 'pdf' && state.current.pdf && state.current.pdfAutoFit) {
-        await fitPdfToViewport(state.current.pdf);
-        setViewerMeta();
-        await renderPdfPages();
-      }
-    });
+    $('#collapse-left').addEventListener('click', () => $('#left-col').classList.toggle('collapsed'));
+    $('#collapse-right').addEventListener('click', () => $('#right-col').classList.toggle('collapsed'));
 
     $('#annot-fab').addEventListener('pointerdown', ev => {
       ev.preventDefault();
@@ -1651,21 +1600,19 @@
 
     $('#zoom-in').addEventListener('click', async () => {
       if (state.current.kind !== 'pdf' || !state.current.pdf) return;
-      state.current.pdfAutoFit = false;
-      state.current.pdfScale = Math.min(2.5, Math.round((state.current.pdfScale + 0.15) * 100) / 100);
+      state.current.pdfScale = Math.min(2.25, Math.round((state.current.pdfScale + 0.15) * 100) / 100);
       setViewerMeta();
       await renderPdfPages();
     });
     $('#zoom-out').addEventListener('click', async () => {
       if (state.current.kind !== 'pdf' || !state.current.pdf) return;
-      state.current.pdfAutoFit = false;
       state.current.pdfScale = Math.max(0.75, Math.round((state.current.pdfScale - 0.15) * 100) / 100);
       setViewerMeta();
       await renderPdfPages();
     });
     $('#zoom-reset').addEventListener('click', async () => {
       if (state.current.kind !== 'pdf' || !state.current.pdf) return;
-      await fitPdfToViewport(state.current.pdf);
+      state.current.pdfScale = 1.25;
       setViewerMeta();
       await renderPdfPages();
     });
@@ -1681,15 +1628,10 @@
       if (!sel || sel.toString().trim() === '') hideFabAndLookup();
     });
 
-    window.addEventListener('resize', async () => {
+    window.addEventListener('resize', () => {
       if (state.current.kind === 'pdf' && state.current.pdf) {
-        if (state.current.pdfAutoFit) {
-          await fitPdfToViewport(state.current.pdf);
-          setViewerMeta();
-          await renderPdfPages();
-        } else {
-          renderPdfAnnotations();
-        }
+        // Keep the same layout, just refresh overlays when viewport changes.
+        renderPdfAnnotations();
       }
     });
   }
