@@ -19,11 +19,11 @@ body{overflow:hidden}
 .brand{display:flex;align-items:baseline;gap:12px}
 .brand h1{margin:0;font-size:16px}
 .subtitle{font-size:12px;color:var(--muted-2)}
-.app-shell{display:flex;gap:16px;height:calc(100vh - 63px);padding:16px}
+.app-shell{display:flex;gap:12px;height:calc(100vh - 63px);padding:12px}
 .panel{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;position:relative}
-.sidebar{width:290px;min-width:290px;flex:0 0 290px;display:flex;flex-direction:column}
-.sidebar.left,.sidebar.right{width:290px;min-width:290px;flex-basis:290px}
-.center{flex:1;min-width:320px;display:flex;flex-direction:column}
+.sidebar{width:260px;min-width:260px;flex:0 0 260px;display:flex;flex-direction:column}
+.sidebar.left,.sidebar.right{width:260px;min-width:260px;flex-basis:260px}
+.center{flex:1;min-width:0;display:flex;flex-direction:column}
 .panel-header{display:flex;justify-content:space-between;align-items:center;padding:14px 14px 10px 14px}
 .title-wrap{display:flex;flex-direction:column;gap:2px}
 .eyebrow,.small{font-size:12px;color:var(--muted-2)}
@@ -31,7 +31,12 @@ body{overflow:hidden}
 .panel-body{padding:0 14px 14px 14px;overflow:auto;flex:1}
 .center-head{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 10px 16px;gap:12px;border-bottom:1px solid rgba(255,255,255,0.03)}
 .center-head h2{margin:0;font-size:20px}
-.center-content{position:relative;flex:1;overflow:auto;padding:14px 16px 16px 16px}
+..center-content{position:relative;flex:1;overflow:auto;padding:12px 12px 14px 12px}
+body.pdf-mode .app-shell{gap:10px}
+body.pdf-mode .center-content{padding:10px 10px 12px 10px}
+body.pdf-mode .pdf-toolbar{padding:10px 12px 12px 12px;margin-bottom:6px}
+body.pdf-mode .pdf-viewer{padding:8px 12px 16px 12px;gap:14px}
+
 .muted{color:var(--muted-2)}
 .hidden{display:none !important}
 .icon-btn,.pill-btn,.tool-btn,.floating-btn{border:none;cursor:pointer}
@@ -78,6 +83,8 @@ body{overflow:hidden}
 .toolbar-spacer{flex:1}
 .pdf-viewer{padding:10px 16px 20px 16px;display:flex;flex-direction:column;gap:16px}
 .pdf-page{position:relative;background:#f6f2ec;border-radius:12px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,0.35);align-self:center}
+.pdf-page{max-width:100%}
+
 .pdf-page canvas{display:block}
 .pdf-canvas{position:relative;z-index:1}
 .pdf-text-layer{position:absolute;inset:0;z-index:2;opacity:0.02;user-select:text;mix-blend-mode:multiply}
