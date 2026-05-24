@@ -592,7 +592,7 @@
   }
 
   function resetCenterState() {
-    delete document.body.dataset.viewerKind;
+    document.body.classList.remove('pdf-mode');
     $('#article').classList.remove('hidden');
     $('#pdf-viewer').classList.add('hidden');
     $('#pdf-viewer').innerHTML = '';
@@ -636,7 +636,7 @@
 
   async function loadTextReading(r, url) {
     state.current.kind = 'text';
-    document.body.dataset.viewerKind = 'text';
+    document.body.classList.remove('pdf-mode');
     $('#post-title').textContent = r.title || r.path.split('/').pop();
     $('#viewer-meta').textContent = '';
     $('#pdf-toolbar').classList.add('hidden');
@@ -735,7 +735,7 @@
 
   async function loadPdfReading(r, url) {
     state.current.kind = 'pdf';
-    document.body.dataset.viewerKind = 'pdf';
+    document.body.classList.add('pdf-mode');
     state.current.filePath = normalizePath(r.path);
     state.current.title = r.title || r.path.split('/').pop();
     state.current.pdfUrl = url;
@@ -778,15 +778,14 @@
     const cache = state.commentCache[remoteId] || { status: 'idle', items: [] };
     const items = comments || cache.items || [];
     const hash = JSON.stringify(items.map(i => [i.author || '', i.text || '']));
-    const hasVisibleContent = listEl.childElementCount > 0;
-    if (cache.lastRenderedHash === hash && hasVisibleContent) return;
     cache.lastRenderedHash = hash;
+    cache.items = items;
     state.commentCache[remoteId] = cache;
+    listEl.innerHTML = '';
     if (!items.length) {
       listEl.innerHTML = '<div class="muted small">No comments yet.</div>';
       return;
     }
-    listEl.innerHTML = '';
     items.forEach(c => {
       const div = el('div', { className: 'comment-item' });
       div.innerHTML = `<div class="comment-author">${escapeHtml(c.author || 'Anonymous')}</div><div>${escapeHtml(c.text || '')}</div>`;
@@ -936,13 +935,12 @@
       cont.appendChild(card);
     });
     if (state.current.kind === 'pdf') renderPdfAnnotations();
-    if (state.openCommentFor) fetchAndRenderCommentsFor(state.openCommentFor, true);
   }
 
   function openCommentsFor(remoteId) {
     state.openCommentFor = remoteId;
-    const anns = loadAnnsLocal(state.current.filePath) || [];
     renderAnnotations();
+    fetchAndRenderCommentsFor(remoteId, true);
     setTimeout(() => {
       const ta = document.getElementById(`comment-input-${remoteId}`);
       if (ta) ta.focus();
